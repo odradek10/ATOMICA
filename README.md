@@ -19,11 +19,6 @@ After I worked through the course and finally understood it, I decided to build 
 Atomica contains **exactly 15 crystal structures**, because those are the structures covered in my course curriculum. I only know these well enough to check them, and I did not want to add structures I couldn't verify. So I deliberately added nothing beyond them.
 
 If you spot anything that doesn't match your textbook, please tell me (see "Feedback" below). Note that some structures can be drawn in different but equivalent settings (for example, a different choice of origin), so a textbook figure may look shifted compared to the one here.
-
-## A note on how it was made
-
-I built this with extensive help from AI coding tools. The idea, the choice of what to include, the curriculum-based scope, and the testing against what I learned in class are mine. The code was written with AI assistance, and I'm continuing to read, test and improve it as I learn.
-
 ---
 
 ## Features
