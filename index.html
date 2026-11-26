@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Atomica — 3D Crystallography &amp; Solid-State Structure Visualizer</title>
+  <title>ATOMICA — 3D Crystallography &amp; Solid-State Structure Visualizer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -71,18 +71,19 @@
           </svg>
         </div>
         <div class="leading-tight">
-          <div class="text-sm font-bold tracking-tight text-slate-100">Atomica</div>
+          <div class="text-sm font-bold tracking-tight text-slate-100">ATOMICA</div>
           <div class="text-[10px] text-slate-400 uppercase tracking-wider">3D Crystallography Visualizer</div>
         </div>
       </div>
 
-      <!-- 6 Navigation Tabs -->
+      <!-- 7 Navigation Tabs -->
       <nav id="main-tabs" class="flex items-center gap-1 flex-wrap" role="tablist">
         <button type="button" data-tab="crystals" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all">Crystals</button>
         <button type="button" data-tab="miller" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all">Miller Indices</button>
         <button type="button" data-tab="voids" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all">Voids</button>
         <button type="button" data-tab="reciprocal" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all">Reciprocal</button>
         <button type="button" data-tab="defects" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all">Defects</button>
+        <button type="button" data-tab="stereographic" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all">Stereographic</button>
         <button type="button" data-tab="mycrystal" class="tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all">My Crystal</button>
       </nav>
     </div>
@@ -125,8 +126,44 @@
   <div class="flex-1 flex min-h-0 relative overflow-hidden">
     <aside id="sidebar" class="w-72 sm:w-80 shrink-0 bg-slate-950/95 border-r border-slate-800/90 overflow-y-auto p-3.5 space-y-4 z-10"></aside>
 
-    <main class="flex-1 relative min-w-0 bg-[radial-gradient(ellipse_at_center,_#111c33_0%,_#070b14_75%)] overflow-hidden select-none">
-      <div id="viewport-mount" class="w-full h-full"></div>
+    <main class="flex-1 relative min-w-0 flex flex-col bg-[radial-gradient(ellipse_at_center,_#111c33_0%,_#070b14_75%)] overflow-hidden select-none">
+      <!-- Stereographic Viewport Mode Switcher Bar (visible only on Stereographic tab) -->
+      <div id="stereo-topbar" class="hidden flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-slate-950/92 border-b border-slate-800/90 shrink-0 z-20">
+        <div id="stereo-topbar-status" class="flex items-center gap-2 text-xs"></div>
+        <div class="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800">
+          <span class="text-[10px] uppercase tracking-wider text-slate-400 px-1.5 hidden sm:inline">View</span>
+          <button type="button" data-stview="3d" class="st-view-btn px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all">3D Reference</button>
+          <button type="button" data-stview="2d" class="st-view-btn px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all">2D Wulff Net</button>
+          <button type="button" data-stview="dual" class="st-view-btn px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all">Dual View</button>
+        </div>
+      </div>
+
+      <div id="viewport-split" class="flex-1 w-full flex flex-col lg:flex-row min-h-0">
+        <div id="viewport-3d-pane" class="flex-1 relative min-w-0 min-h-0 h-full">
+          <div id="viewport-mount" class="w-full h-full"></div>
+        </div>
+        <!-- Right Viewport: Synchronized 2D Wulff Net & Stereographic Projection -->
+        <div id="stereo-2d-pane" class="hidden w-full lg:w-1/2 h-1/2 lg:h-full border-t lg:border-t-0 lg:border-l border-slate-800/90 bg-[#080e1c] flex flex-col min-w-0 min-h-0 relative z-10">
+          <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-950/90 border-b border-slate-800/90 shrink-0">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="font-semibold text-slate-100">2D Stereogram &amp; Wulff Net</span>
+              <span id="stereo-2d-center-badge" class="font-mono text-[11px] text-sky-300 bg-sky-500/15 border border-sky-500/35 px-1.5 py-0.5 rounded">[001]</span>
+              <span id="stereo-2d-phi-badge" class="font-mono text-[10px] text-slate-400">φ = 0°</span>
+            </div>
+            <div class="flex items-center gap-2.5 text-[10px] text-slate-400">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-400 inline-block"></span>Upper (●)</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full border border-sky-400 bg-slate-950 inline-block"></span>Lower (○)</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rotate-45 bg-fuchsia-400 inline-block"></span>Zone [UVW]</span>
+            </div>
+          </div>
+          <div class="flex-1 relative min-h-0 w-full">
+            <canvas id="stereo-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+            <div id="stereo-2d-hud" class="pointer-events-none absolute bottom-11 left-3 bg-slate-950/85 backdrop-blur-sm border border-slate-800 rounded-md px-2.5 py-1 text-[11px] font-mono text-slate-300">
+              Click any two poles to measure θ &amp; Zone Axis [UVW]
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Top-Left Context Pill -->
       <div id="context-pill" class="pointer-events-none absolute top-3 left-3 flex items-center gap-2 bg-slate-950/80 backdrop-blur-md border border-slate-800/80 rounded-lg px-3 py-1.5 text-xs"></div>
@@ -142,7 +179,7 @@
       <div id="toast-box" class="hidden pointer-events-none absolute top-3 right-3 z-30 bg-slate-900/95 border border-sky-500/50 text-sky-200 px-3 py-1.5 rounded-lg text-xs shadow-lg"></div>
 
       <!-- Orbit Controls Hint -->
-      <div class="pointer-events-none absolute bottom-3 left-3 text-[11px] text-slate-400/85 bg-slate-950/60 backdrop-blur-sm px-2.5 py-1 rounded-md border border-slate-800/60 hidden sm:block">
+      <div id="orbit-hint" class="pointer-events-none absolute bottom-3 left-3 text-[11px] text-slate-400/85 bg-slate-950/60 backdrop-blur-sm px-2.5 py-1 rounded-md border border-slate-800/60 hidden sm:block">
         Drag: Orbit &bull; Shift/Right-Drag: Pan &bull; Scroll: Zoom
       </div>
 
@@ -349,6 +386,46 @@
       }
 
       function buildSpinelBasis() {
+        // Exact Fd-3m normal spinel (u = 0.387) shifted by (+5/8, +1/8, +1/8) so every octant
+        // forms an FCC O2- anion sub-cage:
+        //   Type A octants ((ox+oy+oz) even, e.g. [0,0.5]^3): 0 Mg2+, 1 body-center + 6 edge Al3+ (Al4O4 heterocubanes)
+        //   Type B octants ((ox+oy+oz) odd,  e.g. [0.5,1]x[0,0.5]^2): 2 interior Mg2+ (opposite mini-octant MgO4) + 6 edge Al3+
+        const u = 0.387;
+        const shift = [0.625, 0.125, 0.125];
+        const mgBase = [
+          { el: 'Mg', f: [0, 0, 0] },
+          { el: 'Mg', f: [0.25, 0.25, 0.25] }
+        ];
+        const alBase = [
+          { el: 'Al', f: [0.625, 0.625, 0.625] },
+          { el: 'Al', f: [0.625, 0.875, 0.875] },
+          { el: 'Al', f: [0.875, 0.625, 0.875] },
+          { el: 'Al', f: [0.875, 0.875, 0.625] }
+        ];
+        const oBase = [
+          { el: 'O', f: [u, u, u] },
+          { el: 'O', f: [u, -u, -u] },
+          { el: 'O', f: [-u, u, -u] },
+          { el: 'O', f: [-u, -u, u] },
+          { el: 'O', f: [0.25 - u, 0.25 - u, 0.25 - u] },
+          { el: 'O', f: [0.25 - u, 0.25 + u, 0.25 + u] },
+          { el: 'O', f: [0.25 + u, 0.25 - u, 0.25 + u] },
+          { el: 'O', f: [0.25 + u, 0.25 + u, 0.25 - u] }
+        ];
+        return expandFCC(mgBase.concat(alBase, oBase)).map((site) => ({
+          el: site.el,
+          f: [
+            (((site.f[0] + shift[0]) % 1) + 1) % 1,
+            (((site.f[1] + shift[1]) % 1) + 1) % 1,
+            (((site.f[2] + shift[2]) % 1) + 1) % 1
+          ]
+        }));
+      }
+
+      const SPINEL_BASIS_ORIGIN1 = (function () {
+        // Classic Fd-3m Origin Choice 1 (shifted by (+0.5, 0, 0) so [0,0.5]^3 is Type A):
+        //   Type A octants: 4 interior Al3+ + 4 interior O2- forming a standalone Al4O4 heterocubane cube + 4 corner Mg2+
+        //   Type B octants: 1 centered Mg2+ + 4 interior O2- forming a single yellow MgO4 tetrahedron + 4 corner Mg2+ (0 Al3+)
         const u = 0.387;
         const mgBase = [
           { el: 'Mg', f: [0, 0, 0] },
@@ -370,8 +447,15 @@
           { el: 'O', f: [0.25 + u, 0.25 - u, 0.25 + u] },
           { el: 'O', f: [0.25 + u, 0.25 + u, 0.25 - u] }
         ];
-        return expandFCC(mgBase.concat(alBase, oBase));
-      }
+        return expandFCC(mgBase.concat(alBase, oBase)).map((site) => ({
+          el: site.el,
+          f: [
+            (((site.f[0] + 0.5) % 1) + 1) % 1,
+            site.f[1],
+            site.f[2]
+          ]
+        }));
+      })();
 
       const CRYSTAL_DB = [
         {
@@ -666,7 +750,7 @@
           spaceGroup: 'Fd-3m (No. 227)',
           cn: '4 (Mg²⁺) : 6 (Al³⁺) : 4 (O²⁻)',
           apf: '71.4%',
-          colorOverrides: { Mg: CATION_COLOR, Al: SECOND_CATION_COLOR, O: ANION_COLOR },
+          colorOverrides: { Mg: '#fde047', Al: '#4ade80', O: ANION_COLOR },
           cell: { a: 8.083, b: 8.083, c: 8.083, alpha: 90, beta: 90, gamma: 90 },
           basis: buildSpinelBasis(),
           bondRules: [
@@ -674,10 +758,10 @@
             { a: 'Al', b: 'O', min: 1.6, max: 2.15 }
           ],
           polyRules: [
-            { center: 'Mg', ligand: 'O', maxDist: 2.15, expected: 4, color: '#4ade80', label: 'MgO₄ Tetrahedron' },
-            { center: 'Al', ligand: 'O', maxDist: 2.15, expected: 6, color: '#facc15', label: 'AlO₆ Octahedron' }
+            { center: 'Mg', ligand: 'O', maxDist: 2.15, expected: 4, color: '#facc15', edgeColor: '#fef08a', label: 'MgO₄ Tetrahedron' },
+            { center: 'Al', ligand: 'O', maxDist: 2.15, expected: 6, color: '#34d399', edgeColor: '#a7f3d0', label: 'AlO₆ Octahedron' }
           ],
-          notes: 'Normal spinel (56 atoms/cell): Use 1/8, 1/4, or 1/2 unit cell subcells to clearly inspect MgO₄ tetrahedra & AlO₆ octahedra.'
+          notes: 'Normal spinel (56 atoms/cell) built from alternating FCC-O²⁻ octants: Type A (AlO₆ / Al₄O₄ heterocubanes, 0 Mg²⁺) & Type B (2 yellow MgO₄ tetrahedra in opposite mini-octants).'
         }
       ];
 
@@ -1011,15 +1095,19 @@
         const isSubcell = nx < 1 || ny < 1 || nz < 1;
         const maxIx = Math.ceil(nx), maxIy = Math.ceil(ny), maxIz = Math.ceil(nz);
         const vecs = getLatticeVectors(structure.cell);
-        const epsFrac = 0.0015;
+        const isSpinel = structure.id === 'spinel';
+        const isSpinelOrigin1 = isSpinel && state.spinelSetting === 'origin1';
+        const activeBasis = isSpinelOrigin1 ? SPINEL_BASIS_ORIGIN1 : structure.basis;
+        const epsFrac = (isSpinel && !isSpinelOrigin1) ? 0.025 : 0.0015;
+        const minIdx = (isSpinel && !isSpinelOrigin1) ? -1 : 0;
         const dedupTolSq = 0.01 * 0.01; // strict 0.01 Å tolerance
 
         const atoms = [];
-        for (let ix = 0; ix <= maxIx; ix++) {
-          for (let iy = 0; iy <= maxIy; iy++) {
-            for (let iz = 0; iz <= maxIz; iz++) {
-              for (let b = 0; b < structure.basis.length; b++) {
-                const site = structure.basis[b];
+        for (let ix = minIdx; ix <= maxIx; ix++) {
+          for (let iy = minIdx; iy <= maxIy; iy++) {
+            for (let iz = minIdx; iz <= maxIz; iz++) {
+              for (let b = 0; b < activeBasis.length; b++) {
+                const site = activeBasis[b];
                 const fx = site.f[0] + ix;
                 const fy = site.f[1] + iy;
                 const fz = site.f[2] + iz;
@@ -1103,8 +1191,8 @@
           for (let ix = -1; ix <= maxIx + 1; ix++) {
             for (let iy = -1; iy <= maxIy + 1; iy++) {
               for (let iz = -1; iz <= maxIz + 1; iz++) {
-                for (let b = 0; b < structure.basis.length; b++) {
-                  const site = structure.basis[b];
+                for (let b = 0; b < activeBasis.length; b++) {
+                  const site = activeBasis[b];
                   const fx = site.f[0] + ix;
                   const fy = site.f[1] + iy;
                   const fz = site.f[2] + iz;
@@ -1126,7 +1214,7 @@
         const epsInner = 0.02;
         structure.polyRules.forEach((rule) => {
           const candidates = [];
-          const usePeriodic = !!rule.allowPeriodicLigands || (isSubcell && structure.id === 'spinel' && rule.center === 'Al');
+          const usePeriodic = !!rule.allowPeriodicLigands;
           for (let i = 0; i < atoms.length; i++) {
             const center = atoms[i];
             if (center.el !== rule.center) continue;
@@ -1164,6 +1252,7 @@
                 ligandEl: rule.ligand,
                 vertices: ligs,
                 color: rule.color,
+                edgeColor: rule.edgeColor || null,
                 label: rule.label,
                 squarePlanar: !!rule.squarePlanar
               });
@@ -1204,6 +1293,7 @@
                   ligandEl: rule.ligand,
                   vertices: ligs,
                   color: rule.color,
+                  edgeColor: rule.edgeColor || null,
                   label: rule.label,
                   squarePlanar: !!rule.squarePlanar
                 });
@@ -1217,7 +1307,44 @@
           });
         });
 
+        // In Spinel Origin Choice 1, render each Type A octant's Al4O4 distorted cube (heterocubane) as an emerald cage
+        if (isSpinelOrigin1) {
+          const subStepsX = nx === 1 ? [0, 0.5] : [0];
+          const subStepsY = ny === 1 ? [0, 0.5] : [0];
+          const subStepsZ = nz === 1 ? [0, 0.5] : [0];
+          subStepsX.forEach((sx, ox) => {
+            subStepsY.forEach((sy, oy) => {
+              subStepsZ.forEach((sz, oz) => {
+                if ((ox + oy + oz) % 2 !== 0) return; // Type A only
+                const clusterAtoms = atoms.filter((at) =>
+                  (at.el === 'Al' || at.el === 'O') &&
+                  at.frac[0] > sx + 0.04 && at.frac[0] < sx + 0.46 &&
+                  at.frac[1] > sy + 0.04 && at.frac[1] < sy + 0.46 &&
+                  at.frac[2] > sz + 0.04 && at.frac[2] < sz + 0.46
+                );
+                if (clusterAtoms.length === 8) {
+                  const cFrac = [sx + 0.25, sy + 0.25, sz + 0.25];
+                  const cCart = fracToCart(cFrac[0], cFrac[1], cFrac[2], vecs);
+                  const cPos = crystToThree(cCart[0], cCart[1], cCart[2]).sub(boxCenterThree);
+                  polyhedra.push({
+                    id: 'poly-' + polyhedra.length,
+                    centerAtom: { id: 'heterocubane-' + ox + '-' + oy + '-' + oz, el: 'Al', frac: cFrac, posCentered: cPos },
+                    ligandEl: 'O',
+                    vertices: clusterAtoms.map((a) => a.posCentered),
+                    color: '#34d399',
+                    edgeColor: '#a7f3d0',
+                    label: 'Al₄O₄ Heterocubane Cluster',
+                    squarePlanar: false
+                  });
+                }
+              });
+            });
+          });
+        }
+
         const cellEdges = [];
+        const internalDividerEdges = [];
+        const octantMeta = [];
         const edgeKeys = new Set();
         const corners = [
           [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
@@ -1229,7 +1356,67 @@
           [0, 4], [1, 5], [2, 6], [3, 7]
         ];
 
-        if (isSubcell) {
+        if (isSpinel) {
+          // Outer bounding frame of the active Spinel slice (1/8, 1/4, 1/2, or 1 Unit Cell)
+          edgePairs.forEach((pair) => {
+            const pa = [corners[pair[0]][0] * nx, corners[pair[0]][1] * ny, corners[pair[0]][2] * nz];
+            const pb = [corners[pair[1]][0] * nx, corners[pair[1]][1] * ny, corners[pair[1]][2] * nz];
+            const ca = fracToCart(pa[0], pa[1], pa[2], vecs);
+            const cb = fracToCart(pb[0], pb[1], pb[2], vecs);
+            cellEdges.push([
+              crystToThree(ca[0], ca[1], ca[2]).sub(boxCenterThree),
+              crystToThree(cb[0], cb[1], cb[2]).sub(boxCenterThree)
+            ]);
+          });
+
+          // Build octant metadata & toggleable internal octant divider wireframes
+          const subStepsX = nx === 1 ? [0, 0.5] : [0];
+          const subStepsY = ny === 1 ? [0, 0.5] : [0];
+          const subStepsZ = nz === 1 ? [0, 0.5] : [0];
+          const divKeys = new Set();
+          const onOuterEdge = (pa, pb) => {
+            const epsE = 1e-4;
+            const sameX = Math.abs(pa[0] - pb[0]) < epsE;
+            const sameY = Math.abs(pa[1] - pb[1]) < epsE;
+            const sameZ = Math.abs(pa[2] - pb[2]) < epsE;
+            const xBnd = sameX && (Math.abs(pa[0]) < epsE || Math.abs(pa[0] - nx) < epsE);
+            const yBnd = sameY && (Math.abs(pa[1]) < epsE || Math.abs(pa[1] - ny) < epsE);
+            const zBnd = sameZ && (Math.abs(pa[2]) < epsE || Math.abs(pa[2] - nz) < epsE);
+            return (xBnd && yBnd) || (xBnd && zBnd) || (yBnd && zBnd);
+          };
+
+          subStepsX.forEach((sx, ox) => {
+            subStepsY.forEach((sy, oy) => {
+              subStepsZ.forEach((sz, oz) => {
+                const octType = ((ox + oy + oz) % 2 === 0) ? 'A' : 'B';
+                const labelZ = (nz === 1 && oz === 0) ? -0.055 : (sz + 0.555);
+                const lblCart = fracToCart(sx + 0.25, sy + 0.25, labelZ, vecs);
+                octantMeta.push({
+                  ox: ox, oy: oy, oz: oz,
+                  type: octType,
+                  labelPos: crystToThree(lblCart[0], lblCart[1], lblCart[2]).sub(boxCenterThree)
+                });
+                edgePairs.forEach((pair) => {
+                  const pa = [sx + corners[pair[0]][0] * 0.5, sy + corners[pair[0]][1] * 0.5, sz + corners[pair[0]][2] * 0.5];
+                  const pb = [sx + corners[pair[1]][0] * 0.5, sy + corners[pair[1]][1] * 0.5, sz + corners[pair[1]][2] * 0.5];
+                  if (onOuterEdge(pa, pb)) return;
+                  const ka = pa.join(',');
+                  const kb = pb.join(',');
+                  const key = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+                  if (!divKeys.has(key)) {
+                    divKeys.add(key);
+                    const ca = fracToCart(pa[0], pa[1], pa[2], vecs);
+                    const cb = fracToCart(pb[0], pb[1], pb[2], vecs);
+                    internalDividerEdges.push([
+                      crystToThree(ca[0], ca[1], ca[2]).sub(boxCenterThree),
+                      crystToThree(cb[0], cb[1], cb[2]).sub(boxCenterThree)
+                    ]);
+                  }
+                });
+              });
+            });
+          });
+        } else if (isSubcell) {
           const subStepsX = nx === 1 ? [0, 0.5] : [0];
           const subStepsY = ny === 1 ? [0, 0.5] : [0];
           const subStepsZ = nz === 1 ? [0, 0.5] : [0];
@@ -1286,7 +1473,7 @@
           if (r > maxR) maxR = r;
         });
 
-        return { atoms, bonds, polyhedra, cellEdges, vecs, dims, boundingRadius: maxR + 1.2 };
+        return { atoms, bonds, polyhedra, cellEdges, internalDividerEdges, octantMeta, vecs, dims, boundingRadius: maxR + 1.2 };
       }
 
       function buildPolyhedronGeometry(vertices, isSquarePlanar) {
@@ -1868,6 +2055,9 @@
         viewMode: 'hybrid',
         polyOpacity: 0.58,
         showCentralCation: true,
+        spinelSetting: 'fcc_o',
+        showSpinelOctantDividers: true,
+        showSpinelOctantLabels: true,
         hiddenSpecies: {},
         removedParts: [],
         animateRejoin: true,
@@ -1945,7 +2135,32 @@
         defectShowStrain: true,
         defectShowSlipPlane: true,
 
-        // Tab 6: My Crystal Builder
+        // Tab 6: Stereographic Projection & Wulff Net
+        stereo: {
+          viewMode: '3d',
+          center: '001',
+          inputH: 1,
+          inputK: 1,
+          inputL: 1,
+          inputU: 1,
+          inputV: 0,
+          inputW: 1,
+          poles: [],
+          activePoleId: null,
+          sel1: [1, 1, 1],
+          sel2: [1, 0, 1],
+          nextSelectSlot: 1,
+          showWulff: true,
+          wulffStep: 15,
+          wulffPhi: 0,
+          showLower: true,
+          showTraces: true,
+          showZoneAxis: true,
+          showCube: true,
+          hoveredPoleId: null
+        },
+
+        // Tab 7: My Crystal Builder
         customCrystal: {
           name: 'CsCl (Custom)',
           system: 'Cubic',
@@ -1968,7 +2183,7 @@
         return CRYSTAL_DB.find((c) => c.id === state.selectedCrystalId) || CRYSTAL_DB[0];
       }
       function getCrystalData() {
-        const key = state.selectedCrystalId + '|' + state.supercell;
+        const key = state.selectedCrystalId + '|' + state.supercell + '|' + state.spinelSetting;
         if (key !== cachedCrystalKey) {
           cachedCrystalKey = key;
           cachedCrystalData = generateSupercellData(getActiveCrystal(), state.supercell);
@@ -2187,6 +2402,9 @@
             tooltipEl.classList.add('hidden');
             handleDefectInterstitialClick(ud.defectIntId);
           }
+        } else if (state.activeTab === 'stereographic' && ud.stereoHkl) {
+          tooltipEl.classList.add('hidden');
+          selectStereoPoleForMeasure(ud.stereoHkl, ud.stereoPoleId);
         } else if (state.activeTab === 'voids' && ud.voidId) {
           if (state.voidClickMode === 'remove' || e.shiftKey) {
             if (!state.removedVoidIds.includes(ud.voidId)) {
@@ -2206,12 +2424,16 @@
 
       const resizeObserver = new ResizeObserver(() => {
         const w = mountEl.clientWidth;
-        const hPx = Math.max(1, mountEl.clientHeight);
-        camera.aspect = w / hPx;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, hPx);
+        const hPx = mountEl.clientHeight;
+        if (w > 0 && hPx > 0) {
+          camera.aspect = w / hPx;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, hPx);
+        }
         if (state.activeTab === 'reciprocal' && state.recipSubTab === 'xrd') {
           drawXRDCanvas();
+        } else if (state.activeTab === 'stereographic') {
+          drawStereo2DCanvas();
         }
       });
       resizeObserver.observe(mountEl);
@@ -2261,6 +2483,9 @@
           return;
         }
         if (state.activeTab === 'reciprocal' && state.recipSubTab === 'xrd') {
+          return;
+        }
+        if (state.activeTab === 'stereographic' && state.stereo.viewMode === '2d') {
           return;
         }
         if (state.activeTab === 'defects' && state.defectHopAnim) {
@@ -5750,6 +5975,1261 @@
       }
 
 
+
+      // =========================================================================
+      // MODULE: STEREOGRAPHIC PROJECTION & 2D WULFF NET ENGINE
+      // =========================================================================
+      const STEREO_RADIUS = 3.0;
+      let stereoCanvasHitTargets = [];
+
+      function gcd2(a, b) {
+        a = Math.abs(Math.round(a));
+        b = Math.abs(Math.round(b));
+        while (b !== 0) { const t = b; b = a % b; a = t; }
+        return a;
+      }
+
+      function reduceIndices(h, k, l) {
+        const g = gcd2(gcd2(h, k), l);
+        if (g === 0) return [0, 0, 0];
+        return [Math.round(h / g), Math.round(k / g), Math.round(l / g)];
+      }
+
+      function formatMillerPlain(arr, openBr, closeBr) {
+        const big = arr.some((v) => Math.abs(v) >= 10);
+        const sep = big ? ' ' : '';
+        return openBr + arr.map((v) => (v < 0 ? '-' + Math.abs(v) : String(v))).join(sep) + closeBr;
+      }
+
+      function getStereoBasis(centerKey) {
+        if (centerKey === '110') {
+          const s2 = Math.SQRT1_2;
+          return {
+            e1: [-s2, s2, 0],
+            e2: [0, 0, 1],
+            e3: [s2, s2, 0],
+            northLabel: '001',
+            eastLabel: '-110',
+            centerLabel: '[110]'
+          };
+        }
+        if (centerKey === '111') {
+          const s2 = Math.SQRT1_2;
+          const s3 = 1 / Math.sqrt(3);
+          const s6 = 1 / Math.sqrt(6);
+          return {
+            e1: [-s2, s2, 0],
+            e2: [-s6, -s6, 2 * s6],
+            e3: [s3, s3, s3],
+            northLabel: '-1-12',
+            eastLabel: '-110',
+            centerLabel: '[111]'
+          };
+        }
+        return {
+          e1: [1, 0, 0],
+          e2: [0, 1, 0],
+          e3: [0, 0, 1],
+          northLabel: '010',
+          eastLabel: '100',
+          centerLabel: '[001]'
+        };
+      }
+
+      function crystToProjUnit(hkl, basis) {
+        const len = Math.sqrt(hkl[0] * hkl[0] + hkl[1] * hkl[1] + hkl[2] * hkl[2]);
+        if (len < 1e-8) return null;
+        const ux = hkl[0] / len, uy = hkl[1] / len, uz = hkl[2] / len;
+        return [
+          ux * basis.e1[0] + uy * basis.e1[1] + uz * basis.e1[2],
+          ux * basis.e2[0] + uy * basis.e2[1] + uz * basis.e2[2],
+          ux * basis.e3[0] + uy * basis.e3[1] + uz * basis.e3[2]
+        ];
+      }
+
+      // Maps projection frame (px=East, py=North, pz=Up) -> right-handed Three.js (x=px, y=pz, z=-py)
+      function projToThree(px, py, pz, radius) {
+        const r = radius !== undefined ? radius : STEREO_RADIUS;
+        return new THREE.Vector3(px * r, pz * r, -py * r);
+      }
+
+      function stereographicProject(px, py, pz) {
+        if (pz >= -1e-6) {
+          const denom = 1 + Math.max(0, pz);
+          return { x: px / denom, y: py / denom, upper: true };
+        }
+        const denom = 1 - pz;
+        return { x: px / denom, y: py / denom, upper: false };
+      }
+
+      function generateCubicEquivalents(h, k, l) {
+        const red = reduceIndices(h, k, l);
+        if (red[0] === 0 && red[1] === 0 && red[2] === 0) return [];
+        const a = Math.abs(red[0]), b = Math.abs(red[1]), c = Math.abs(red[2]);
+        const perms = [
+          [a, b, c], [a, c, b], [b, a, c], [b, c, a], [c, a, b], [c, b, a]
+        ];
+        const out = [];
+        const seen = new Set();
+        perms.forEach((p) => {
+          const s0 = p[0] === 0 ? [0] : [p[0], -p[0]];
+          const s1 = p[1] === 0 ? [0] : [p[1], -p[1]];
+          const s2 = p[2] === 0 ? [0] : [p[2], -p[2]];
+          s0.forEach((x) => {
+            s1.forEach((y) => {
+              s2.forEach((z) => {
+                const key = x + ',' + y + ',' + z;
+                if (!seen.has(key)) {
+                  seen.add(key);
+                  out.push([x, y, z]);
+                }
+              });
+            });
+          });
+        });
+        return out;
+      }
+
+      function poleColorForHkl(hkl, kind) {
+        const s = [Math.abs(hkl[0]), Math.abs(hkl[1]), Math.abs(hkl[2])].sort((a, b) => b - a);
+        if (s[0] === 1 && s[1] === 0 && s[2] === 0) return '#38bdf8';
+        if (s[0] === 1 && s[1] === 1 && s[2] === 0) return '#34d399';
+        if (s[0] === 1 && s[1] === 1 && s[2] === 1) return '#facc15';
+        return kind === 'dir' ? '#fb923c' : '#a78bfa';
+      }
+
+      function makePoleId(hkl, kind) {
+        return (kind === 'dir' ? 'd:' : 'p:') + hkl.join(',');
+      }
+
+      function addStereoPole(hkl, kind, showTrace, makeActive) {
+        const red = reduceIndices(hkl[0], hkl[1], hkl[2]);
+        if (red[0] === 0 && red[1] === 0 && red[2] === 0) return null;
+        const id = makePoleId(red, kind);
+        let existing = state.stereo.poles.find((p) => p.hkl[0] === red[0] && p.hkl[1] === red[1] && p.hkl[2] === red[2]);
+        if (existing) {
+          if (showTrace) existing.showTrace = true;
+          if (makeActive) state.stereo.activePoleId = existing.id;
+          return existing;
+        }
+        const item = {
+          id: id,
+          hkl: red,
+          kind: kind,
+          showTrace: !!showTrace,
+          color: poleColorForHkl(red, kind)
+        };
+        state.stereo.poles.push(item);
+        if (makeActive) state.stereo.activePoleId = item.id;
+        return item;
+      }
+
+      function initStandardCubicStereo() {
+        state.stereo.poles = [];
+        [[1, 0, 0], [1, 1, 0], [1, 1, 1]].forEach((fam) => {
+          generateCubicEquivalents(fam[0], fam[1], fam[2]).forEach((hkl) => {
+            const is111 = hkl[0] === 1 && hkl[1] === 1 && hkl[2] === 1;
+            addStereoPole(hkl, 'plane', is111, is111);
+          });
+        });
+        state.stereo.sel1 = [1, 1, 1];
+        state.stereo.sel2 = [1, 0, 1];
+        state.stereo.nextSelectSlot = 1;
+        state.stereo.activePoleId = makePoleId([1, 1, 1], 'plane');
+      }
+      initStandardCubicStereo();
+
+      function computeAngleAndZone(p1, p2) {
+        const m1 = Math.sqrt(p1[0] * p1[0] + p1[1] * p1[1] + p1[2] * p1[2]);
+        const m2 = Math.sqrt(p2[0] * p2[0] + p2[1] * p2[1] + p2[2] * p2[2]);
+        if (m1 < 1e-8 || m2 < 1e-8) {
+          return { valid: false, dot: 0, m1: m1, m2: m2, cosTheta: 0, thetaDeg: 0, zoneAxis: null };
+        }
+        const dot = p1[0] * p2[0] + p1[1] * p2[1] + p1[2] * p2[2];
+        const cosT = Math.max(-1, Math.min(1, dot / (m1 * m2)));
+        const thetaDeg = (Math.acos(cosT) * 180) / Math.PI;
+        const u0 = p1[1] * p2[2] - p1[2] * p2[1];
+        const v0 = p1[2] * p2[0] - p1[0] * p2[2];
+        const w0 = p1[0] * p2[1] - p1[1] * p2[0];
+        const zRed = reduceIndices(u0, v0, w0);
+        const hasZone = (zRed[0] !== 0 || zRed[1] !== 0 || zRed[2] !== 0);
+        return {
+          valid: true,
+          dot: dot,
+          m1: m1,
+          m2: m2,
+          cosTheta: cosT,
+          thetaDeg: thetaDeg,
+          zoneAxis: hasZone ? zRed : null
+        };
+      }
+
+      function getGreatCircleBasis(normalProj) {
+        const nx = normalProj[0], ny = normalProj[1], nz = normalProj[2];
+        const ref = Math.abs(nz) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+        const aRaw = vecCross(normalProj, ref);
+        const aLen = vecNorm(aRaw) || 1;
+        const aVec = [aRaw[0] / aLen, aRaw[1] / aLen, aRaw[2] / aLen];
+        const bVec = vecCross(normalProj, aVec);
+        return { a: aVec, b: bVec };
+      }
+
+      function sampleGreatCircleProj(normalProj, steps) {
+        const gb = getGreatCircleBasis(normalProj);
+        const pts = [];
+        for (let i = 0; i <= steps; i++) {
+          const t = (i / steps) * Math.PI * 2;
+          const ct = Math.cos(t), st = Math.sin(t);
+          pts.push([
+            gb.a[0] * ct + gb.b[0] * st,
+            gb.a[1] * ct + gb.b[1] * st,
+            gb.a[2] * ct + gb.b[2] * st
+          ]);
+        }
+        return pts;
+      }
+
+      function getActiveStereoPole() {
+        const st = state.stereo;
+        if (st.activePoleId) {
+          const hit = st.poles.find((p) => p.id === st.activePoleId);
+          if (hit) return hit;
+        }
+        if (st.poles.length > 0) return st.poles[0];
+        return { id: 'default', hkl: [st.inputH || 1, st.inputK || 1, st.inputL || 1], kind: 'plane', showTrace: true, color: '#facc15' };
+      }
+
+      function drawBarredIndicesCanvas(ctx, arr, x, y, color, fontSize, openBr, closeBr) {
+        const sz = fontSize || 10;
+        ctx.save();
+        ctx.font = '600 ' + sz + 'px "JetBrains Mono", monospace';
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        const big = arr.some((v) => Math.abs(v) >= 10);
+        const tokens = [];
+        if (openBr) tokens.push({ txt: openBr, bar: false });
+        arr.forEach((v, idx) => {
+          if (idx > 0 && big) tokens.push({ txt: ' ', bar: false });
+          tokens.push({ txt: String(Math.abs(v)), bar: v < 0 });
+        });
+        if (closeBr) tokens.push({ txt: closeBr, bar: false });
+
+        let totalW = 0;
+        const widths = tokens.map((tk) => {
+          const w = ctx.measureText(tk.txt).width;
+          totalW += w;
+          return w;
+        });
+
+        let curX = x - totalW * 0.5;
+        tokens.forEach((tk, idx) => {
+          ctx.fillText(tk.txt, curX, y);
+          if (tk.bar) {
+            ctx.lineWidth = 1.25;
+            ctx.beginPath();
+            ctx.moveTo(curX + 0.5, y - sz * 0.56);
+            ctx.lineTo(curX + widths[idx] - 0.5, y - sz * 0.56);
+            ctx.stroke();
+          }
+          curX += widths[idx];
+        });
+        ctx.restore();
+      }
+
+      function buildStereographic3DScene() {
+        const st = state.stereo;
+        const basis = getStereoBasis(st.center);
+        const R = STEREO_RADIUS;
+
+        // 1. Translucent Reference Projection Sphere
+        const sphereMesh = new THREE.Mesh(
+          new THREE.SphereGeometry(R, 40, 28),
+          new THREE.MeshPhysicalMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.08,
+            roughness: 0.25,
+            metalness: 0.05,
+            side: THREE.DoubleSide,
+            depthWrite: false
+          })
+        );
+        contentGroup.add(sphereMesh);
+
+        // Subtle latitude/longitude wireframe cage on the reference sphere
+        const cageVerts = [];
+        [-60, -30, 30, 60].forEach((latDeg) => {
+          const lat = (latDeg * Math.PI) / 180;
+          const rLat = R * Math.cos(lat), yLat = R * Math.sin(lat);
+          for (let i = 0; i < 64; i++) {
+            const a0 = (i / 64) * Math.PI * 2, a1 = ((i + 1) / 64) * Math.PI * 2;
+            cageVerts.push(rLat * Math.cos(a0), yLat, rLat * Math.sin(a0), rLat * Math.cos(a1), yLat, rLat * Math.sin(a1));
+          }
+        });
+        [0, 45, 90, 135].forEach((lonDeg) => {
+          const lon = (lonDeg * Math.PI) / 180;
+          const cl = Math.cos(lon), sl = Math.sin(lon);
+          for (let i = 0; i < 64; i++) {
+            const a0 = (i / 64) * Math.PI * 2, a1 = ((i + 1) / 64) * Math.PI * 2;
+            cageVerts.push(
+              R * Math.cos(a0) * cl, R * Math.sin(a0), R * Math.cos(a0) * sl,
+              R * Math.cos(a1) * cl, R * Math.sin(a1), R * Math.cos(a1) * sl
+            );
+          }
+        });
+        const cageGeo = new THREE.BufferGeometry();
+        cageGeo.setAttribute('position', new THREE.Float32BufferAttribute(cageVerts, 3));
+        contentGroup.add(new THREE.LineSegments(cageGeo, new THREE.LineBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.35 })));
+
+        // 2. Equatorial Plane Disc & Primitive Circle Ring
+        const eqDisc = new THREE.Mesh(
+          new THREE.CircleGeometry(R, 72),
+          new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.11, side: THREE.DoubleSide, depthWrite: false })
+        );
+        eqDisc.rotation.x = -Math.PI / 2;
+        contentGroup.add(eqDisc);
+
+        const eqPts = [];
+        for (let i = 0; i <= 96; i++) {
+          const a = (i / 96) * Math.PI * 2;
+          eqPts.push(new THREE.Vector3(R * Math.cos(a), 0, R * Math.sin(a)));
+        }
+        contentGroup.add(new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(eqPts),
+          new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 })
+        ));
+
+        // N-S Axis line + North Pole (N) and South Pole (S) markers
+        const nsPos = new THREE.Vector3(0, R, 0);
+        const ssPos = new THREE.Vector3(0, -R, 0);
+        const nsLineGeo = new THREE.BufferGeometry().setFromPoints([ssPos, nsPos]);
+        const nsLine = new THREE.Line(nsLineGeo, new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 0.16, gapSize: 0.10, transparent: true, opacity: 0.6 }));
+        nsLine.computeLineDistances();
+        contentGroup.add(nsLine);
+
+        const poleMarkerGeo = new THREE.SphereGeometry(0.11, 18, 14);
+        const nMesh = new THREE.Mesh(poleMarkerGeo, new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.6 }));
+        nMesh.position.copy(nsPos);
+        contentGroup.add(nMesh);
+        const nSprite = makeTextSprite('N', '#38bdf8', 54);
+        nSprite.position.set(0, R + 0.36, 0);
+        nSprite.scale.set(0.55, 0.32, 1);
+        contentGroup.add(nSprite);
+
+        const sMesh = new THREE.Mesh(poleMarkerGeo, new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.6 }));
+        sMesh.position.copy(ssPos);
+        contentGroup.add(sMesh);
+        const sSprite = makeTextSprite('S', '#fb7185', 54);
+        sSprite.position.set(0, -R - 0.36, 0);
+        sSprite.scale.set(0.55, 0.32, 1);
+        contentGroup.add(sSprite);
+
+        // 3. Centered Wireframe Cubic Unit Cell rotated by Projection Center Preset
+        if (st.showCube) {
+          const halfC = 0.62;
+          const cubeCorners = [
+            [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
+            [-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]
+          ].map((c) => {
+            const px = c[0] * basis.e1[0] + c[1] * basis.e1[1] + c[2] * basis.e1[2];
+            const py = c[0] * basis.e2[0] + c[1] * basis.e2[1] + c[2] * basis.e2[2];
+            const pz = c[0] * basis.e3[0] + c[1] * basis.e3[1] + c[2] * basis.e3[2];
+            return projToThree(px, py, pz, halfC);
+          });
+          const cPairs = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+          const cVerts = [];
+          cPairs.forEach((pr) => {
+            cVerts.push(cubeCorners[pr[0]].x, cubeCorners[pr[0]].y, cubeCorners[pr[0]].z, cubeCorners[pr[1]].x, cubeCorners[pr[1]].y, cubeCorners[pr[1]].z);
+          });
+          const cGeo = new THREE.BufferGeometry();
+          cGeo.setAttribute('position', new THREE.Float32BufferAttribute(cVerts, 3));
+          contentGroup.add(new THREE.LineSegments(cGeo, new THREE.LineBasicMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.85 })));
+
+          // Subtle crystal axes [100], [010], [001] on the unit cube
+          [
+            { v: [1, 0, 0], col: 0xf43f5e },
+            { v: [0, 1, 0], col: 0x22c55e },
+            { v: [0, 0, 1], col: 0x38bdf8 }
+          ].forEach((ax) => {
+            const p = crystToProjUnit(ax.v, basis);
+            const dir = projToThree(p[0], p[1], p[2], 1).normalize();
+            contentGroup.add(new THREE.ArrowHelper(dir, new THREE.Vector3(0, 0, 0), halfC * 1.45, ax.col, 0.16, 0.08));
+          });
+        }
+
+        // 4. Active Focus Pole: Plane passing through cube/sphere + Great Circle + Normal Ray P + Projection Line to S/N + Equatorial P'
+        const activePole = getActiveStereoPole();
+        const activeProj = activePole ? crystToProjUnit(activePole.hkl, basis) : null;
+        if (activeProj) {
+          const p3D = projToThree(activeProj[0], activeProj[1], activeProj[2], R);
+          const sp2 = stereographicProject(activeProj[0], activeProj[1], activeProj[2]);
+          const pPrime3D = projToThree(sp2.x, sp2.y, 0, R);
+          const projAnchor = sp2.upper ? ssPos : nsPos;
+
+          // Plane disc through center of cube/sphere
+          if (st.showTraces) {
+            const normal3D = p3D.clone().normalize();
+            const planeDisc = new THREE.Mesh(
+              new THREE.CircleGeometry(R, 64),
+              new THREE.MeshPhysicalMaterial({
+                color: 0x06b6d4,
+                emissive: 0x0891b2,
+                emissiveIntensity: 0.18,
+                transparent: true,
+                opacity: 0.22,
+                side: THREE.DoubleSide,
+                depthWrite: false
+              })
+            );
+            planeDisc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal3D);
+            contentGroup.add(planeDisc);
+
+            // Great circle intersection on sphere surface
+            const gcPts = sampleGreatCircleProj(activeProj, 96).map((q) => projToThree(q[0], q[1], q[2], R * 1.003));
+            contentGroup.add(new THREE.Line(
+              new THREE.BufferGeometry().setFromPoints(gcPts),
+              new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.95 })
+            ));
+          }
+
+          // Normal vector / direction ray from origin to P on sphere
+          const rayDir = p3D.clone().normalize();
+          contentGroup.add(new THREE.ArrowHelper(rayDir, new THREE.Vector3(0, 0, 0), R, 0xfacc15, 0.28, 0.14));
+
+          // Projection line connecting P to South Pole S (upper) or North Pole N (lower), piercing equator at P'
+          const projLineGeo = new THREE.BufferGeometry().setFromPoints([p3D, projAnchor]);
+          const projLine = new THREE.Line(projLineGeo, new THREE.LineDashedMaterial({ color: 0xfde047, dashSize: 0.15, gapSize: 0.09 }));
+          projLine.computeLineDistances();
+          contentGroup.add(projLine);
+
+          // Highlight P (on sphere) and P' (on equatorial plane)
+          const pSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.115, 20, 16),
+            new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 0.75 })
+          );
+          pSphere.position.copy(p3D);
+          contentGroup.add(pSphere);
+
+          const pPrimeMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.11, 20, 16),
+            new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x06b6d4, emissiveIntensity: 0.85 })
+          );
+          pPrimeMesh.position.copy(pPrime3D);
+          contentGroup.add(pPrimeMesh);
+
+          const pRing = new THREE.Mesh(
+            new THREE.TorusGeometry(0.18, 0.025, 10, 28),
+            new THREE.MeshBasicMaterial({ color: 0x67e8f9 })
+          );
+          pRing.position.copy(pPrime3D);
+          pRing.rotation.x = Math.PI / 2;
+          contentGroup.add(pRing);
+
+          const pLbl = makeTextSprite('P', '#fde047', 48);
+          pLbl.position.copy(p3D).addScaledVector(rayDir, 0.34);
+          pLbl.scale.set(0.50, 0.28, 1);
+          contentGroup.add(pLbl);
+
+          const ppLbl = makeTextSprite("P'", '#67e8f9', 48);
+          ppLbl.position.copy(pPrime3D).add(new THREE.Vector3(0, 0.30, 0));
+          ppLbl.scale.set(0.52, 0.28, 1);
+          contentGroup.add(ppLbl);
+        }
+
+        // 5. All Plotted Poles on the 3D Sphere & Equatorial Plane
+        const dotGeo = new THREE.SphereGeometry(1, 16, 12);
+        const eqDotGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.02, 14);
+        const s1 = st.sel1, s2 = st.sel2;
+
+        st.poles.forEach((pole) => {
+          const p = crystToProjUnit(pole.hkl, basis);
+          if (!p) return;
+          const isUpper = p[2] >= -1e-6;
+          if (!isUpper && !st.showLower) return;
+
+          const isSel1 = s1 && pole.hkl[0] === s1[0] && pole.hkl[1] === s1[1] && pole.hkl[2] === s1[2];
+          const isSel2 = s2 && pole.hkl[0] === s2[0] && pole.hkl[1] === s2[1] && pole.hkl[2] === s2[2];
+          const isHov = st.hoveredPoleId === pole.id;
+
+          const pos3 = projToThree(p[0], p[1], p[2], R);
+          const rad = (isSel1 || isSel2 || isHov) ? 0.11 : 0.072;
+          const colHex = isSel1 ? '#22d3ee' : isSel2 ? '#fb923c' : pole.color;
+
+          const mat = new THREE.MeshStandardMaterial({
+            color: colHex,
+            emissive: colHex,
+            emissiveIntensity: (isSel1 || isSel2 || isHov) ? 0.7 : (isUpper ? 0.3 : 0.1),
+            transparent: !isUpper,
+            opacity: isUpper ? 1.0 : 0.55,
+            roughness: 0.25
+          });
+          const m = new THREE.Mesh(dotGeo, mat);
+          m.scale.setScalar(rad);
+          m.position.copy(pos3);
+          m.userData = {
+            clickable: true,
+            stereoPoleId: pole.id,
+            stereoHkl: pole.hkl,
+            tooltip: {
+              title: (pole.kind === 'dir' ? 'Direction ' : 'Plane Pole ') + formatMillerPlain(pole.hkl, pole.kind === 'dir' ? '[' : '(', pole.kind === 'dir' ? ']' : ')'),
+              subtitle: (isUpper ? 'Upper Hemisphere (●)' : 'Lower Hemisphere (○)') + ' • Click to select P₁/P₂',
+              frac: pole.hkl,
+              coordLabel: pole.kind === 'dir' ? 'uvw' : 'hkl',
+              isIntCoord: true
+            }
+          };
+          contentGroup.add(m);
+          pickables.push(m);
+
+          // Projected equatorial marker
+          const sp = stereographicProject(p[0], p[1], p[2]);
+          const eqM = new THREE.Mesh(eqDotGeo, new THREE.MeshBasicMaterial({
+            color: colHex, transparent: true, opacity: isUpper ? 0.72 : 0.35
+          }));
+          eqM.position.copy(projToThree(sp.x, sp.y, 0, R));
+          contentGroup.add(eqM);
+        });
+
+        // 6. Selected Pair P1 & P2 Great-Circle Arc + Zone Axis [UVW] & Zone Circle
+        const az = computeAngleAndZone(s1, s2);
+        if (az.valid) {
+          const p1u = crystToProjUnit(s1, basis);
+          const p2u = crystToProjUnit(s2, basis);
+          if (p1u && p2u) {
+            const thetaRad = (az.thetaDeg * Math.PI) / 180;
+            const sinT = Math.sin(thetaRad);
+            const arcPts = [];
+            const segs = 48;
+            for (let i = 0; i <= segs; i++) {
+              const t = i / segs;
+              let q;
+              if (sinT > 1e-4) {
+                const w1 = Math.sin((1 - t) * thetaRad) / sinT;
+                const w2 = Math.sin(t * thetaRad) / sinT;
+                q = [w1 * p1u[0] + w2 * p2u[0], w1 * p1u[1] + w2 * p2u[1], w1 * p1u[2] + w2 * p2u[2]];
+              } else {
+                q = p1u;
+              }
+              arcPts.push(projToThree(q[0], q[1], q[2], R * 1.012));
+            }
+            for (let i = 0; i < arcPts.length - 1; i++) {
+              addTubeSegment(contentGroup, arcPts[i], arcPts[i + 1], 0.032, 0xf59e0b, 0.96);
+            }
+
+            // Highlight halos around P1 & P2
+            const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.145, 16, 12), new THREE.MeshBasicMaterial({ color: 0x22d3ee, wireframe: true }));
+            h1.position.copy(projToThree(p1u[0], p1u[1], p1u[2], R));
+            contentGroup.add(h1);
+            const h2 = new THREE.Mesh(new THREE.SphereGeometry(0.145, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfb923c, wireframe: true }));
+            h2.position.copy(projToThree(p2u[0], p2u[1], p2u[2], R));
+            contentGroup.add(h2);
+          }
+
+          if (st.showZoneAxis && az.zoneAxis) {
+            const zu = crystToProjUnit(az.zoneAxis, basis);
+            if (zu) {
+              const zPos3 = projToThree(zu[0], zu[1], zu[2], R);
+              const zDir = zPos3.clone().normalize();
+              contentGroup.add(new THREE.ArrowHelper(zDir, new THREE.Vector3(0, 0, 0), R, 0xe879f9, 0.30, 0.14));
+
+              const zDiam = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.14, 0),
+                new THREE.MeshStandardMaterial({ color: 0xe879f9, emissive: 0xc026d3, emissiveIntensity: 0.75 })
+              );
+              zDiam.position.copy(zPos3);
+              contentGroup.add(zDiam);
+
+              const zLbl = makeTextSprite(formatMillerPlain(az.zoneAxis, '[', ']'), '#f0abfc', 38);
+              zLbl.position.copy(zPos3).addScaledVector(zDir, 0.38);
+              zLbl.scale.set(0.95, 0.40, 1);
+              contentGroup.add(zLbl);
+
+              // Zone Circle (great circle 90° away from [UVW], containing P1 & P2)
+              const zcPts = sampleGreatCircleProj(zu, 96).map((q) => projToThree(q[0], q[1], q[2], R * 1.006));
+              contentGroup.add(new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints(zcPts),
+                new THREE.LineBasicMaterial({ color: 0xe879f9, transparent: true, opacity: 0.85 })
+              ));
+            }
+          }
+        }
+      }
+
+      function drawStereo2DCanvas() {
+        const canvas = document.getElementById('stereo-canvas');
+        if (!canvas || state.activeTab !== 'stereographic' || state.stereo.viewMode === '3d') return;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.max(260, Math.floor(rect.width));
+        const h = Math.max(240, Math.floor(rect.height));
+        if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+          canvas.width = Math.floor(w * dpr);
+          canvas.height = Math.floor(h * dpr);
+        }
+        const ctx = canvas.getContext('2d');
+        ctx.save();
+        ctx.scale(dpr, dpr);
+
+        const st = state.stereo;
+        const basis = getStereoBasis(st.center);
+
+        const centerBadge = document.getElementById('stereo-2d-center-badge');
+        const phiBadge = document.getElementById('stereo-2d-phi-badge');
+        if (centerBadge) centerBadge.textContent = basis.centerLabel;
+        if (phiBadge) phiBadge.textContent = 'φ = ' + st.wulffPhi + '°';
+
+        // Background
+        ctx.fillStyle = '#080e1c';
+        ctx.fillRect(0, 0, w, h);
+
+        const cx = w * 0.5;
+        const cy = h * 0.485;
+        const R = Math.max(85, Math.min(w, h) * 0.39);
+        const toX = (sx) => cx + sx * R;
+        const toY = (sy) => cy - sy * R;
+
+        // Subtle circular disc fill
+        const discGrad = ctx.createRadialGradient(cx, cy, R * 0.05, cx, cy, R);
+        discGrad.addColorStop(0, '#0f1c36');
+        discGrad.addColorStop(1, '#091224');
+        ctx.fillStyle = discGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Clip inside primitive circle for Wulff net & great-circle traces
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.clip();
+
+        // 1. Optional Rotatable Wulff Net (Great Circles & Small Circles every 10° or 15°)
+        if (st.showWulff) {
+          const step = st.wulffStep === 10 ? 10 : 15;
+          const phiRad = (st.wulffPhi * Math.PI) / 180;
+          const cPhi = Math.cos(phiRad), sPhi = Math.sin(phiRad);
+          const rotPt = (u, v) => [toX(u * cPhi - v * sPhi), toY(u * sPhi + v * cPhi)];
+
+          // Meridians (Great Circles)
+          for (let lon = -90 + step; lon <= 90 - step; lon += step) {
+            const lam = (lon * Math.PI) / 180;
+            const sL = Math.sin(lam), cL = Math.cos(lam);
+            ctx.strokeStyle = lon === 0 ? 'rgba(56, 189, 248, 0.38)' : 'rgba(100, 116, 139, 0.28)';
+            ctx.lineWidth = lon === 0 ? 1.2 : 0.85;
+            ctx.beginPath();
+            for (let bDeg = -90; bDeg <= 90; bDeg += 3) {
+              const beta = (bDeg * Math.PI) / 180;
+              const px = Math.cos(beta) * sL;
+              const py = Math.sin(beta);
+              const pz = Math.cos(beta) * cL;
+              const denom = 1 + pz;
+              const pt = rotPt(px / denom, py / denom);
+              if (bDeg === -90) ctx.moveTo(pt[0], pt[1]);
+              else ctx.lineTo(pt[0], pt[1]);
+            }
+            ctx.stroke();
+          }
+
+          // Parallels (Small Circles)
+          for (let lat = -90 + step; lat <= 90 - step; lat += step) {
+            const beta = (lat * Math.PI) / 180;
+            const cB = Math.cos(beta), sB = Math.sin(beta);
+            ctx.strokeStyle = lat === 0 ? 'rgba(56, 189, 248, 0.38)' : 'rgba(100, 116, 139, 0.25)';
+            ctx.lineWidth = lat === 0 ? 1.2 : 0.85;
+            ctx.beginPath();
+            for (let lDeg = -90; lDeg <= 90; lDeg += 3) {
+              const lam = (lDeg * Math.PI) / 180;
+              const px = cB * Math.sin(lam);
+              const py = sB;
+              const pz = cB * Math.cos(lam);
+              const denom = 1 + pz;
+              const pt = rotPt(px / denom, py / denom);
+              if (lDeg === -90) ctx.moveTo(pt[0], pt[1]);
+              else ctx.lineTo(pt[0], pt[1]);
+            }
+            ctx.stroke();
+          }
+        } else {
+          // Minimal reference crosshairs
+          ctx.strokeStyle = 'rgba(100, 116, 139, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy);
+          ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R);
+          ctx.stroke();
+        }
+
+        // Helper to draw an upper-hemisphere great-circle trace for a unit normal in projection coords
+        function drawGreatCircle2D(normalProj, strokeStyle, lineWidth, dashed) {
+          const pts = sampleGreatCircleProj(normalProj, 144);
+          ctx.save();
+          ctx.strokeStyle = strokeStyle;
+          ctx.lineWidth = lineWidth;
+          if (dashed) ctx.setLineDash(dashed);
+          ctx.beginPath();
+          let penDown = false;
+          for (let i = 0; i < pts.length; i++) {
+            const q = pts[i];
+            if (q[2] >= -1e-4) {
+              const denom = 1 + Math.max(0, q[2]);
+              const px = toX(q[0] / denom), py = toY(q[1] / denom);
+              if (!penDown) { ctx.moveTo(px, py); penDown = true; }
+              else ctx.lineTo(px, py);
+            } else {
+              penDown = false;
+            }
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // 2. Plot Trace Great Circles for planes with showTrace = true
+        if (st.showTraces) {
+          st.poles.forEach((pole) => {
+            if (!pole.showTrace) return;
+            const nProj = crystToProjUnit(pole.hkl, basis);
+            if (!nProj) return;
+            const isActive = pole.id === st.activePoleId;
+            drawGreatCircle2D(nProj, isActive ? '#22d3ee' : 'rgba(56, 189, 248, 0.55)', isActive ? 2.1 : 1.35, null);
+          });
+        }
+
+        // 3. Zone Circle (great circle 90° from Zone Axis [UVW]) & Connecting Great-Circle Arc (P1 -> P2)
+        const az = computeAngleAndZone(st.sel1, st.sel2);
+        if (az.valid && st.showZoneAxis && az.zoneAxis) {
+          const zu = crystToProjUnit(az.zoneAxis, basis);
+          if (zu) {
+            drawGreatCircle2D(zu, 'rgba(232, 121, 249, 0.78)', 2.0, [6, 4]);
+          }
+        }
+
+        if (az.valid) {
+          const p1u = crystToProjUnit(st.sel1, basis);
+          const p2u = crystToProjUnit(st.sel2, basis);
+          if (p1u && p2u) {
+            const thetaRad = (az.thetaDeg * Math.PI) / 180;
+            const sinT = Math.sin(thetaRad);
+            const segs = 64;
+            let prevUpper = null;
+            let midLabelPt = null;
+
+            for (let i = 0; i <= segs; i++) {
+              const t = i / segs;
+              let q;
+              if (sinT > 1e-4) {
+                const w1 = Math.sin((1 - t) * thetaRad) / sinT;
+                const w2 = Math.sin(t * thetaRad) / sinT;
+                q = [w1 * p1u[0] + w2 * p2u[0], w1 * p1u[1] + w2 * p2u[1], w1 * p1u[2] + w2 * p2u[2]];
+              } else {
+                q = p1u;
+              }
+              const sp = stereographicProject(q[0], q[1], q[2]);
+              const px = toX(sp.x), py = toY(sp.y);
+              if (i === Math.floor(segs / 2)) midLabelPt = [px, py];
+
+              if (i > 0 && prevUpper === sp.upper) {
+                ctx.save();
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2.6;
+                if (!sp.upper) ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.moveTo(prevPx, prevPy);
+                ctx.lineTo(px, py);
+                ctx.stroke();
+                ctx.restore();
+              }
+              var prevPx = px, prevPy = py;
+              prevUpper = sp.upper;
+            }
+
+            if (midLabelPt && az.thetaDeg > 1) {
+              ctx.save();
+              ctx.font = 'bold 11px "JetBrains Mono", monospace';
+              const txt = az.thetaDeg.toFixed(2) + '°';
+              const tw = ctx.measureText(txt).width + 10;
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+              ctx.strokeStyle = '#f59e0b';
+              ctx.lineWidth = 1;
+              ctx.fillRect(midLabelPt[0] - tw * 0.5, midLabelPt[1] - 20, tw, 17);
+              ctx.strokeRect(midLabelPt[0] - tw * 0.5, midLabelPt[1] - 20, tw, 17);
+              ctx.fillStyle = '#fde68a';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(txt, midLabelPt[0], midLabelPt[1] - 11.5);
+              ctx.restore();
+            }
+          }
+        }
+
+        ctx.restore(); // End primitive circle clip
+
+        // Primitive circle crisp border
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 4. Plot Poles (● Upper, ○ Lower) + Collect Hit Targets
+        stereoCanvasHitTargets = [];
+        const labelPlaced = [];
+
+        st.poles.forEach((pole) => {
+          const p = crystToProjUnit(pole.hkl, basis);
+          if (!p) return;
+          const sp = stereographicProject(p[0], p[1], p[2]);
+          if (!sp.upper && !st.showLower) return;
+
+          const px = toX(sp.x);
+          const py = toY(sp.y);
+          const isSel1 = st.sel1 && pole.hkl[0] === st.sel1[0] && pole.hkl[1] === st.sel1[1] && pole.hkl[2] === st.sel1[2];
+          const isSel2 = st.sel2 && pole.hkl[0] === st.sel2[0] && pole.hkl[1] === st.sel2[1] && pole.hkl[2] === st.sel2[2];
+          const isActive = pole.id === st.activePoleId;
+          const isHov = pole.id === st.hoveredPoleId;
+
+          stereoCanvasHitTargets.push({ pole: pole, px: px, py: py, upper: sp.upper, proj: p });
+
+          // Outer selection / active halos
+          if (isSel1 || isSel2 || isActive || isHov) {
+            ctx.beginPath();
+            ctx.arc(px, py, isSel1 || isSel2 ? 9.5 : 8, 0, Math.PI * 2);
+            ctx.strokeStyle = isSel1 ? '#22d3ee' : isSel2 ? '#fb923c' : '#fde047';
+            ctx.lineWidth = isSel1 || isSel2 ? 2.2 : 1.5;
+            ctx.stroke();
+          }
+
+          // Marker: filled dot ● (upper) or open circle ○ (lower)
+          const rDot = (isSel1 || isSel2) ? 5.2 : 4.4;
+          ctx.beginPath();
+          ctx.arc(px, py, rDot, 0, Math.PI * 2);
+          if (sp.upper) {
+            ctx.fillStyle = pole.color;
+            ctx.fill();
+            ctx.strokeStyle = '#070b14';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          } else {
+            ctx.fillStyle = '#080e1c';
+            ctx.fill();
+            ctx.strokeStyle = pole.color;
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+          }
+
+          // Clean non-overlapping barred index label
+          const radialLen = Math.hypot(sp.x, sp.y);
+          const offX = radialLen > 0.88 ? (sp.x / radialLen) * 18 : 0;
+          const offY = radialLen > 0.88 ? -(sp.y / radialLen) * 16 : -12;
+          const lx = px + offX;
+          const ly = py + offY;
+          const tooClose = labelPlaced.some((pt) => Math.hypot(pt[0] - lx, pt[1] - ly) < 22);
+          if (!tooClose || isSel1 || isSel2 || isActive || isHov) {
+            labelPlaced.push([lx, ly]);
+            const lblColor = isSel1 ? '#67e8f9' : isSel2 ? '#fdba74' : (sp.upper ? '#e2e8f0' : '#94a3b8');
+            drawBarredIndicesCanvas(ctx, pole.hkl, lx, ly, lblColor, isSel1 || isSel2 ? 10.5 : 9.5, '', '');
+          }
+        });
+
+        // 5. Plot Zone Axis Pole [UVW] as Diamond ◆ / ◇
+        if (az.valid && st.showZoneAxis && az.zoneAxis) {
+          const zu = crystToProjUnit(az.zoneAxis, basis);
+          if (zu) {
+            const zsp = stereographicProject(zu[0], zu[1], zu[2]);
+            const zx = toX(zsp.x), zy = toY(zsp.y);
+            ctx.save();
+            ctx.translate(zx, zy);
+            ctx.rotate(Math.PI / 4);
+            ctx.beginPath();
+            ctx.rect(-5.5, -5.5, 11, 11);
+            if (zsp.upper) {
+              ctx.fillStyle = '#e879f9';
+              ctx.fill();
+              ctx.strokeStyle = '#080e1c';
+              ctx.lineWidth = 1.4;
+              ctx.stroke();
+            } else {
+              ctx.fillStyle = '#080e1c';
+              ctx.fill();
+              ctx.strokeStyle = '#e879f9';
+              ctx.lineWidth = 2.0;
+              ctx.stroke();
+            }
+            ctx.restore();
+            drawBarredIndicesCanvas(ctx, az.zoneAxis, zx, zy - 15, '#f0abfc', 10.5, '[', ']');
+          }
+        }
+
+        ctx.restore();
+      }
+
+      function syncStereographicLayout() {
+        const pane3d = document.getElementById('viewport-3d-pane');
+        const pane2d = document.getElementById('stereo-2d-pane');
+        const topbar = document.getElementById('stereo-topbar');
+        const pill = document.getElementById('context-pill');
+        const orbitHint = document.getElementById('orbit-hint');
+        if (!pane2d || !pane3d) return;
+
+        const isStereo = state.activeTab === 'stereographic';
+        const mode = state.stereo.viewMode || '3d';
+        const show3D = !isStereo || mode === '3d' || mode === 'dual';
+        const show2D = isStereo && (mode === '2d' || mode === 'dual');
+
+        if (topbar) topbar.classList.toggle('hidden', !isStereo);
+        if (pill) pill.classList.toggle('hidden', isStereo);
+        if (orbitHint) orbitHint.classList.toggle('invisible', isStereo && mode === '2d');
+
+        pane3d.classList.toggle('hidden', !show3D);
+        if (show2D) {
+          pane2d.className = mode === 'dual'
+            ? 'w-full lg:w-1/2 h-1/2 lg:h-full border-t lg:border-t-0 lg:border-l border-slate-800/90 bg-[#080e1c] flex flex-col min-w-0 min-h-0 relative z-10'
+            : 'w-full h-full bg-[#080e1c] flex flex-col min-w-0 min-h-0 relative z-10';
+        } else {
+          pane2d.className = 'hidden';
+        }
+
+        if (isStereo) {
+          const statusEl = document.getElementById('stereo-topbar-status');
+          if (statusEl) {
+            const az = computeAngleAndZone(state.stereo.sel1, state.stereo.sel2);
+            const modeLabel = mode === '3d' ? '3D Reference Sphere' : mode === '2d' ? '2D Wulff Net' : 'Dual 3D + 2D View';
+            statusEl.innerHTML =
+              '<span class="font-semibold text-slate-100">' + modeLabel + '</span>' +
+              '<span class="font-mono text-[11px] text-sky-300 bg-sky-500/15 border border-sky-500/35 px-1.5 py-0.5 rounded">[' + state.stereo.center + ']</span>' +
+              '<span class="text-slate-500">&bull;</span>' +
+              '<span class="font-mono text-amber-300">θ = ' + (az.valid ? az.thetaDeg.toFixed(2) + '°' : 'N/A') + '</span>' +
+              (az.valid && az.zoneAxis ? '<span class="text-slate-500 hidden md:inline">&bull;</span><span class="font-mono text-fuchsia-300 hidden md:inline">Zone ' + formatMillerPlain(az.zoneAxis, '[', ']') + '</span>' : '');
+          }
+          document.querySelectorAll('#stereo-topbar .st-view-btn').forEach((btn) => {
+            const active = btn.getAttribute('data-stview') === mode;
+            btn.className = 'st-view-btn px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ' + (
+              active
+                ? 'bg-sky-500/25 text-sky-200 border border-sky-400/60 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 border border-transparent'
+            );
+          });
+        }
+
+        requestAnimationFrame(() => {
+          if (show3D) {
+            const w = mountEl.clientWidth;
+            const hPx = mountEl.clientHeight;
+            if (w > 0 && hPx > 0) {
+              camera.aspect = w / hPx;
+              camera.updateProjectionMatrix();
+              renderer.setSize(w, hPx);
+            }
+          }
+          if (show2D) drawStereo2DCanvas();
+        });
+      }
+
+      function selectStereoPoleForMeasure(hkl, poleId) {
+        const st = state.stereo;
+        if (poleId) st.activePoleId = poleId;
+        if (st.nextSelectSlot === 1) {
+          st.sel1 = hkl.slice();
+          st.nextSelectSlot = 2;
+          showToast('Set P₁ = ' + formatMillerPlain(hkl, '(', ')') + ' — click a second pole for P₂');
+        } else {
+          st.sel2 = hkl.slice();
+          st.nextSelectSlot = 1;
+          const az = computeAngleAndZone(st.sel1, st.sel2);
+          showToast('P₁–P₂ angle θ = ' + az.thetaDeg.toFixed(2) + '°' + (az.zoneAxis ? ' • Zone ' + formatMillerPlain(az.zoneAxis, '[', ']') : ''));
+        }
+        updateAll();
+      }
+
+      function alignWulffNetToPair() {
+        const st = state.stereo;
+        const az = computeAngleAndZone(st.sel1, st.sel2);
+        if (!az.valid || !az.zoneAxis) {
+          showToast('Select two non-collinear poles to align Wulff net');
+          return;
+        }
+        const basis = getStereoBasis(st.center);
+        const zu = crystToProjUnit(az.zoneAxis, basis);
+        if (!zu) return;
+        // Nodal line (intersection of zone circle with equatorial plane) is perpendicular to (zu[0], zu[1])
+        // Wulff net N-S axis sits at angle (90° + phi) in 2D -> align with nodal line!
+        const angRad = Math.atan2(zu[1], zu[0]);
+        let phiDeg = Math.round((angRad * 180) / Math.PI);
+        phiDeg = ((phiDeg % 180) + 180) % 180;
+        st.wulffPhi = phiDeg;
+        st.showWulff = true;
+        if (st.viewMode === '3d') st.viewMode = '2d';
+        showToast('Aligned Wulff Net to P₁–P₂ great circle (φ = ' + phiDeg + '°)');
+        updateAll();
+      }
+
+      function renderStereographicSidebar(sb) {
+        const st = state.stereo;
+        const az = computeAngleAndZone(st.sel1, st.sel2);
+
+        const clampS = (v) => { const n = parseInt(v, 10); return Number.isNaN(n) ? 0 : Math.max(-4, Math.min(4, n)); };
+
+        const zoneBlock = az.valid
+          ? (az.zoneAxis
+              ? '<div class="flex items-center justify-between pt-1.5 border-t border-slate-800/80"><span class="text-slate-400">Zone Axis [UVW]</span><span class="text-fuchsia-300">' + millerHtml(az.zoneAxis, '[', ']') + '</span></div>' +
+                '<div class="text-[10px] text-slate-400 font-mono">P₁×P₂ = [' +
+                (st.sel1[1] * st.sel2[2] - st.sel1[2] * st.sel2[1]) + ', ' +
+                (st.sel1[2] * st.sel2[0] - st.sel1[0] * st.sel2[2]) + ', ' +
+                (st.sel1[0] * st.sel2[1] - st.sel1[1] * st.sel2[0]) + '] → ' + formatMillerPlain(az.zoneAxis, '[', ']') + '</div>'
+              : '<div class="text-[10px] text-amber-300 pt-1 border-t border-slate-800/80">Collinear poles (P₁ × P₂ = 0) — choose two non-parallel planes for a unique Zone Axis.</div>')
+          : '';
+
+        const polesListHtml = st.poles.length === 0
+          ? '<p class="text-[11px] text-slate-500 italic">No poles plotted yet.</p>'
+          : '<div class="max-h-36 overflow-y-auto space-y-1 pr-0.5">' +
+              st.poles.map((p) => {
+                const isAct = p.id === st.activePoleId;
+                const openB = p.kind === 'dir' ? '[' : '(';
+                const closeB = p.kind === 'dir' ? ']' : ')';
+                return '<div class="flex items-center justify-between gap-1 px-2 py-1 rounded-md border text-[11px] ' +
+                  (isAct ? 'bg-sky-500/20 border-sky-400/60 text-sky-200' : 'bg-slate-900 border-slate-800 text-slate-300') + '">' +
+                  '<button type="button" data-stfocus="' + p.id + '" class="st-focus-btn flex items-center gap-1.5 flex-1 text-left">' +
+                    '<span class="w-2 h-2 rounded-full shrink-0" style="background:' + p.color + '"></span>' +
+                    millerHtml(p.hkl, openB, closeB) +
+                    (isAct ? '<span class="text-[9px] text-amber-300 font-mono ml-1">3D Ray</span>' : '') +
+                  '</button>' +
+                  '<button type="button" data-sttrace="' + p.id + '" class="st-trace-btn px-1.5 py-0.5 rounded text-[9px] font-mono border ' + (p.showTrace ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-200' : 'bg-slate-950 border-slate-800 text-slate-500') + '" title="Toggle Great Circle Trace">GC</button>' +
+                  '<button type="button" data-stdel="' + p.id + '" class="st-del-btn text-rose-400 hover:text-rose-300 px-1 font-bold" title="Remove">&times;</button>' +
+                '</div>';
+              }).join('') +
+            '</div>';
+
+        sb.innerHTML =
+          '<section class="space-y-2">' +
+            '<div class="text-xs font-semibold uppercase tracking-wider text-sky-300">Viewport Layout</div>' +
+            '<div class="grid grid-cols-3 gap-1">' +
+              [{ id: '3d', label: '3D Sphere' }, { id: '2d', label: '2D Wulff' }, { id: 'dual', label: 'Dual View' }].map((vm) =>
+                '<button type="button" data-stview="' + vm.id + '" class="st-sb-view-btn py-1.5 px-1 rounded-lg text-[11px] font-semibold border transition-all ' +
+                (st.viewMode === vm.id ? 'bg-sky-500/25 border-sky-400 text-sky-200' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200') +
+                '">' + vm.label + '</button>'
+              ).join('') +
+            '</div>' +
+            '<p class="text-[10px] text-slate-400">Single-view defaults to 3D for max clarity with sidebar open. Toggle 2D Wulff Net or Dual View anytime.</p>' +
+          '</section>' +
+
+          '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
+            '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Projection Center Preset</div>' +
+            '<div class="grid grid-cols-3 gap-1.5">' +
+              ['001', '110', '111'].map((cKey) =>
+                '<button type="button" data-stcenter="' + cKey + '" class="st-center-btn py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all ' +
+                (st.center === cKey ? 'bg-sky-500/25 border-sky-400 text-sky-200' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200') +
+                '">[' + cKey + ']</button>'
+              ).join('') +
+            '</div>' +
+          '</section>' +
+
+          '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
+            '<div class="flex items-center justify-between"><span class="text-xs font-semibold uppercase tracking-wider text-cyan-300">Plane (hkl) Input</span><span class="text-xs text-cyan-200">' + millerHtml([st.inputH, st.inputK, st.inputL], '(', ')') + '</span></div>' +
+            '<div class="grid grid-cols-3 gap-1.5">' +
+              ['h', 'k', 'l'].map((lbl, idx) => {
+                const v = idx === 0 ? st.inputH : idx === 1 ? st.inputK : st.inputL;
+                return '<input id="st-inp-' + lbl + '" type="number" min="-4" max="4" step="1" value="' + v + '" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1 text-center font-mono text-xs text-cyan-200 focus:outline-none focus:border-cyan-400" />';
+              }).join('') +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-1.5">' +
+              '<button type="button" id="st-add-plane" class="py-1.5 rounded-lg text-[11px] font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 transition-colors">Add (hkl) + Trace</button>' +
+              '<button type="button" id="st-plot-hkl-eq" class="py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/50 text-indigo-200 transition-colors">Plot {hkl} Equiv.</button>' +
+            '</div>' +
+
+            '<div class="flex items-center justify-between pt-2"><span class="text-xs font-semibold uppercase tracking-wider text-amber-300">Direction [uvw] Input</span><span class="text-xs text-amber-200">' + millerHtml([st.inputU, st.inputV, st.inputW], '[', ']') + '</span></div>' +
+            '<div class="grid grid-cols-3 gap-1.5">' +
+              ['u', 'v', 'w'].map((lbl, idx) => {
+                const v = idx === 0 ? st.inputU : idx === 1 ? st.inputV : st.inputW;
+                return '<input id="st-inp-' + lbl + '" type="number" min="-4" max="4" step="1" value="' + v + '" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1 text-center font-mono text-xs text-amber-200 focus:outline-none focus:border-amber-400" />';
+              }).join('') +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-1.5">' +
+              '<button type="button" id="st-add-dir" class="py-1.5 rounded-lg text-[11px] font-semibold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-200 transition-colors">Add [uvw] Pole</button>' +
+              '<button type="button" id="st-plot-uvw-eq" class="py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/50 text-indigo-200 transition-colors">Plot &lt;uvw&gt; Equiv.</button>' +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-1.5 pt-1">' +
+              '<button type="button" id="st-preset-std" class="py-1 rounded-md text-[10px] font-medium bg-slate-900 hover:bg-slate-800 border border-slate-700 text-sky-300">Std {100}+{110}+{111}</button>' +
+              '<button type="button" id="st-clear-all" class="py-1 rounded-md text-[10px] font-medium bg-slate-900 hover:bg-rose-500/20 border border-slate-700 text-rose-300">Clear Poles</button>' +
+            '</div>' +
+          '</section>' +
+
+          '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
+            '<div class="flex items-center justify-between"><span class="text-xs font-semibold uppercase tracking-wider text-amber-300">Angle &amp; Zone Axis Tool</span><span class="text-[10px] text-slate-400">Next click: P<sub>' + st.nextSelectSlot + '</sub></span></div>' +
+            '<div class="space-y-1.5">' +
+              '<div class="flex items-center gap-1 text-[10px] font-mono"><span class="text-cyan-300 w-6 font-bold">P₁</span>' +
+                [0, 1, 2].map((i) => '<input data-psel="1" data-pidx="' + i + '" type="number" min="-4" max="4" step="1" value="' + st.sel1[i] + '" class="st-psel-inp flex-1 min-w-0 bg-slate-900 border border-cyan-500/40 rounded py-0.5 text-center text-xs text-cyan-200" />').join('') +
+              '</div>' +
+              '<div class="flex items-center gap-1 text-[10px] font-mono"><span class="text-amber-300 w-6 font-bold">P₂</span>' +
+                [0, 1, 2].map((i) => '<input data-psel="2" data-pidx="' + i + '" type="number" min="-4" max="4" step="1" value="' + st.sel2[i] + '" class="st-psel-inp flex-1 min-w-0 bg-slate-900 border border-amber-500/40 rounded py-0.5 text-center text-xs text-amber-200" />').join('') +
+              '</div>' +
+            '</div>' +
+            '<div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 space-y-1.5 text-xs">' +
+              '<div class="flex items-center justify-between"><span class="text-slate-400">Interplanar Angle θ</span><span class="font-mono text-sm font-bold text-amber-300">' + (az.valid ? az.thetaDeg.toFixed(2) + '°' : 'N/A') + '</span></div>' +
+              (az.valid ? '<div class="text-[10px] font-mono text-slate-400">cos(θ) = ' + az.dot + ' / (' + az.m1.toFixed(2) + '×' + az.m2.toFixed(2) + ') = ' + az.cosTheta.toFixed(4) + '</div>' : '') +
+              zoneBlock +
+            '</div>' +
+            '<label class="flex items-center justify-between text-xs bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-fuchsia-500/35 cursor-pointer"><span class="text-fuchsia-200 font-medium">Show Zone Axis [UVW] &amp; Circle</span><input id="st-chk-zone" type="checkbox" ' + (st.showZoneAxis ? 'checked' : '') + ' class="accent-fuchsia-400" /></label>' +
+          '</section>' +
+
+          '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
+            '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Wulff Net &amp; Sphere Display</div>' +
+            '<label class="flex items-center justify-between text-xs bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-800 cursor-pointer"><span class="text-slate-300">Show Wulff Net Overlay</span><input id="st-chk-wulff" type="checkbox" ' + (st.showWulff ? 'checked' : '') + ' class="accent-sky-400" /></label>' +
+            (st.showWulff
+              ? '<div class="bg-slate-900/70 rounded-lg p-2 border border-slate-800 space-y-2">' +
+                  '<div class="flex items-center justify-between gap-1 text-[11px]"><span class="text-slate-400">Grid Spacing</span><div class="flex gap-1">' +
+                    '<button type="button" data-wstep="10" class="wstep-btn px-2 py-0.5 rounded font-mono border ' + (st.wulffStep === 10 ? 'bg-sky-500/25 border-sky-400 text-sky-200' : 'bg-slate-950 border-slate-800 text-slate-400') + '">10°</button>' +
+                    '<button type="button" data-wstep="15" class="wstep-btn px-2 py-0.5 rounded font-mono border ' + (st.wulffStep === 15 ? 'bg-sky-500/25 border-sky-400 text-sky-200' : 'bg-slate-950 border-slate-800 text-slate-400') + '">15°</button>' +
+                  '</div></div>' +
+                  '<div class="space-y-1">' +
+                    '<div class="flex justify-between text-[11px]"><span class="text-slate-300">Rotate Net (φ)</span><span id="st-phi-val" class="font-mono text-sky-300">' + st.wulffPhi + '°</span></div>' +
+                    '<input id="st-inp-phi" type="range" min="0" max="180" step="1" value="' + st.wulffPhi + '" class="w-full h-1.5 rounded-lg cursor-pointer" />' +
+                  '</div>' +
+                  '<button type="button" id="st-align-wulff" class="w-full py-1 rounded-md text-[10px] font-semibold bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-200 transition-colors">Align Wulff Net to P₁–P₂ Arc</button>' +
+                '</div>'
+              : '') +
+            '<div class="grid grid-cols-1 gap-1">' +
+              '<label class="flex items-center justify-between text-xs bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800 cursor-pointer"><span class="text-slate-300">Lower-Hemisphere Poles (○)</span><input id="st-chk-lower" type="checkbox" ' + (st.showLower ? 'checked' : '') + ' class="accent-sky-400" /></label>' +
+              '<label class="flex items-center justify-between text-xs bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800 cursor-pointer"><span class="text-slate-300">Trace Great Circles &amp; 3D Plane</span><input id="st-chk-traces" type="checkbox" ' + (st.showTraces ? 'checked' : '') + ' class="accent-cyan-400" /></label>' +
+              '<label class="flex items-center justify-between text-xs bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800 cursor-pointer"><span class="text-slate-300">3D Unit Cube at Origin</span><input id="st-chk-cube" type="checkbox" ' + (st.showCube ? 'checked' : '') + ' class="accent-slate-300" /></label>' +
+            '</div>' +
+          '</section>' +
+
+          '<section class="space-y-1.5 pt-2 border-t border-slate-800/80">' +
+            '<div class="flex justify-between items-center"><span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Plotted Poles (' + st.poles.length + ')</span><span class="text-[10px] text-slate-500">Click row = 3D ray</span></div>' +
+            polesListHtml +
+          '</section>';
+
+        sb.querySelectorAll('.st-sb-view-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            st.viewMode = btn.getAttribute('data-stview');
+            updateAll();
+          });
+        });
+
+        sb.querySelectorAll('.st-center-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            st.center = btn.getAttribute('data-stcenter');
+            showToast('Projection center set to [' + st.center + ']');
+            updateAll();
+          });
+        });
+
+        ['h', 'k', 'l', 'u', 'v', 'w'].forEach((ax) => {
+          const el = document.getElementById('st-inp-' + ax);
+          if (el) {
+            el.addEventListener('change', (e) => {
+              const v = clampS(e.target.value);
+              if (ax === 'h') st.inputH = v;
+              else if (ax === 'k') st.inputK = v;
+              else if (ax === 'l') st.inputL = v;
+              else if (ax === 'u') st.inputU = v;
+              else if (ax === 'v') st.inputV = v;
+              else st.inputW = v;
+              renderSidebar();
+            });
+          }
+        });
+
+        document.getElementById('st-add-plane').addEventListener('click', () => {
+          const item = addStereoPole([st.inputH, st.inputK, st.inputL], 'plane', true, true);
+          if (!item) { showToast('Indices cannot all be zero'); return; }
+          showToast('Plotted plane ' + formatMillerPlain(item.hkl, '(', ')') + ' with great-circle trace');
+          updateAll();
+        });
+        document.getElementById('st-plot-hkl-eq').addEventListener('click', () => {
+          const eqs = generateCubicEquivalents(st.inputH, st.inputK, st.inputL);
+          if (eqs.length === 0) { showToast('Indices cannot all be zero'); return; }
+          eqs.forEach((hkl, idx) => addStereoPole(hkl, 'plane', idx === 0, idx === 0));
+          showToast('Plotted ' + eqs.length + ' symmetry equivalents of ' + formatMillerPlain(reduceIndices(st.inputH, st.inputK, st.inputL), '{', '}'));
+          updateAll();
+        });
+        document.getElementById('st-add-dir').addEventListener('click', () => {
+          const item = addStereoPole([st.inputU, st.inputV, st.inputW], 'dir', false, true);
+          if (!item) { showToast('Indices cannot all be zero'); return; }
+          showToast('Plotted direction pole ' + formatMillerPlain(item.hkl, '[', ']'));
+          updateAll();
+        });
+        document.getElementById('st-plot-uvw-eq').addEventListener('click', () => {
+          const eqs = generateCubicEquivalents(st.inputU, st.inputV, st.inputW);
+          if (eqs.length === 0) { showToast('Indices cannot all be zero'); return; }
+          eqs.forEach((hkl, idx) => addStereoPole(hkl, 'dir', false, idx === 0));
+          showToast('Plotted ' + eqs.length + ' symmetry equivalents of ' + formatMillerPlain(reduceIndices(st.inputU, st.inputV, st.inputW), '<', '>'));
+          updateAll();
+        });
+        document.getElementById('st-preset-std').addEventListener('click', () => {
+          initStandardCubicStereo();
+          showToast('Loaded standard cubic {100} + {110} + {111} projection');
+          updateAll();
+        });
+        document.getElementById('st-clear-all').addEventListener('click', () => {
+          st.poles = [];
+          st.activePoleId = null;
+          showToast('Cleared all plotted poles');
+          updateAll();
+        });
+
+        sb.querySelectorAll('.st-psel-inp').forEach((inp) => {
+          inp.addEventListener('change', (e) => {
+            const which = parseInt(inp.getAttribute('data-psel'), 10);
+            const idx = parseInt(inp.getAttribute('data-pidx'), 10);
+            const v = clampS(e.target.value);
+            if (which === 1) st.sel1[idx] = v;
+            else st.sel2[idx] = v;
+            addStereoPole(which === 1 ? st.sel1 : st.sel2, 'plane', false, true);
+            updateAll();
+          });
+        });
+
+        document.getElementById('st-chk-zone').addEventListener('change', (e) => { st.showZoneAxis = e.target.checked; updateAll(); });
+        document.getElementById('st-chk-wulff').addEventListener('change', (e) => { st.showWulff = e.target.checked; updateAll(); });
+        sb.querySelectorAll('.wstep-btn').forEach((btn) => {
+          btn.addEventListener('click', () => { st.wulffStep = parseInt(btn.getAttribute('data-wstep'), 10); updateAll(); });
+        });
+        const phiInp = document.getElementById('st-inp-phi');
+        if (phiInp) {
+          phiInp.addEventListener('input', (e) => {
+            st.wulffPhi = parseInt(e.target.value, 10) || 0;
+            const lbl = document.getElementById('st-phi-val');
+            if (lbl) lbl.textContent = st.wulffPhi + '°';
+            drawStereo2DCanvas();
+          });
+        }
+        const alignBtn = document.getElementById('st-align-wulff');
+        if (alignBtn) alignBtn.addEventListener('click', alignWulffNetToPair);
+
+        document.getElementById('st-chk-lower').addEventListener('change', (e) => { st.showLower = e.target.checked; updateAll(); });
+        document.getElementById('st-chk-traces').addEventListener('change', (e) => { st.showTraces = e.target.checked; updateAll(); });
+        document.getElementById('st-chk-cube').addEventListener('change', (e) => { st.showCube = e.target.checked; updateAll(); });
+
+        sb.querySelectorAll('.st-focus-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const pid = btn.getAttribute('data-stfocus');
+            st.activePoleId = pid;
+            const p = st.poles.find((x) => x.id === pid);
+            if (p) p.showTrace = true;
+            updateAll();
+          });
+        });
+        sb.querySelectorAll('.st-trace-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const pid = btn.getAttribute('data-sttrace');
+            const p = st.poles.find((x) => x.id === pid);
+            if (p) p.showTrace = !p.showTrace;
+            updateAll();
+          });
+        });
+        sb.querySelectorAll('.st-del-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const pid = btn.getAttribute('data-stdel');
+            st.poles = st.poles.filter((x) => x.id !== pid);
+            if (st.activePoleId === pid) st.activePoleId = st.poles.length > 0 ? st.poles[0].id : null;
+            updateAll();
+          });
+        });
+      }
+
       function rebuild3DScene() {
         clearGroup(contentGroup);
         clearGroup(projectionGroup);
@@ -5774,7 +7254,37 @@
           });
           const cellGeo = new THREE.BufferGeometry();
           cellGeo.setAttribute('position', new THREE.Float32BufferAttribute(cellVerts, 3));
-          contentGroup.add(new THREE.LineSegments(cellGeo, new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.78, clippingPlanes: clipPlanes })));
+          contentGroup.add(new THREE.LineSegments(cellGeo, new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.85, clippingPlanes: clipPlanes })));
+
+          // Spinel internal octant divider wireframes (toggleable) & Type A / Type B badges
+          if (crystal.id === 'spinel' && state.showSpinelOctantDividers && crystalData.internalDividerEdges && crystalData.internalDividerEdges.length > 0) {
+            const divVerts = [];
+            crystalData.internalDividerEdges.forEach((edge) => {
+              divVerts.push(edge[0].x, edge[0].y, edge[0].z, edge[1].x, edge[1].y, edge[1].z);
+            });
+            const divGeo = new THREE.BufferGeometry();
+            divGeo.setAttribute('position', new THREE.Float32BufferAttribute(divVerts, 3));
+            const divLines = new THREE.LineSegments(divGeo, new THREE.LineDashedMaterial({
+              color: 0x38bdf8,
+              dashSize: 0.24,
+              gapSize: 0.14,
+              transparent: true,
+              opacity: 0.72,
+              clippingPlanes: clipPlanes
+            }));
+            divLines.computeLineDistances();
+            contentGroup.add(divLines);
+          }
+
+          if (crystal.id === 'spinel' && state.showSpinelOctantLabels && crystalData.octantMeta && crystalData.octantMeta.length > 0) {
+            crystalData.octantMeta.forEach((oct) => {
+              const isA = oct.type === 'A';
+              const badge = makeTextSprite(isA ? 'Type A' : 'Type B', isA ? '#4ade80' : '#fde047', 42);
+              badge.position.copy(oct.labelPos);
+              badge.scale.set(0.88, 0.44, 1);
+              contentGroup.add(badge);
+            });
+          }
 
           const polyCenterIds = new Set(crystalData.polyhedra.map((p) => p.centerAtom.id));
 
@@ -5920,7 +7430,7 @@
               };
 
               const edgeMat = new THREE.LineBasicMaterial({
-                color: 0xe2e8f0,
+                color: poly.edgeColor ? new THREE.Color(poly.edgeColor) : 0xe2e8f0,
                 transparent: true,
                 opacity: Math.min(0.95, state.polyOpacity + 0.35),
                 clippingPlanes: clipPlanes
@@ -6207,6 +7717,9 @@
         else if (state.activeTab === 'defects') {
           buildDefects3DScene();
         }
+        else if (state.activeTab === 'stereographic') {
+          buildStereographic3DScene();
+        }
         else if (state.activeTab === 'mycrystal') {
           buildMyCrystal3DScene();
         }
@@ -6459,7 +7972,16 @@
         if (state.activeTab === 'crystals') {
           const c = getActiveCrystal();
           const d = getCrystalData();
-          pill.innerHTML = '<span class="font-semibold text-slate-100">' + c.name + '</span><span class="text-slate-500">&bull;</span><span class="font-mono text-sky-300">' + d.atoms.length + ' atoms</span>';
+          const spinelTag = c.id === 'spinel'
+            ? (state.supercell === '1/8'
+                ? '1/8 Cell • Type A (Octahedral)'
+                : state.supercell === '1/4'
+                ? '1/4 Cell • Type A + Type B'
+                : state.supercell === '1/2'
+                ? '1/2 Cell • 2×2×1 Checkerboard (2A+2B)'
+                : '1 Unit Cell • 8 Octants (56 atoms/cell)')
+            : (d.atoms.length + ' atoms');
+          pill.innerHTML = '<span class="font-semibold text-slate-100">' + c.name + '</span><span class="text-slate-500">&bull;</span><span class="font-mono text-sky-300">' + spinelTag + '</span>';
         } else if (state.activeTab === 'miller') {
           let html = '<span class="font-semibold text-slate-100">Miller Reference Cell</span>';
           if (state.showPlane) html += '<span class="text-cyan-300 ml-1">' + millerHtml([state.planeH, state.planeK, state.planeL], '(', ')') + '</span>';
@@ -6478,6 +8000,9 @@
             ? (state.defectLattice + ' Point Defects • ' + state.defectTool)
             : (state.defectDislocationType === 'edge' ? 'Edge Dislocation (b ⊥ t)' : 'Screw Dislocation (b ∥ t)');
           pill.innerHTML = '<span class="font-semibold text-slate-100">' + esc(dTitle) + '</span>';
+        } else if (state.activeTab === 'stereographic') {
+          const az = computeAngleAndZone(state.stereo.sel1, state.stereo.sel2);
+          pill.innerHTML = '<span class="font-semibold text-slate-100">3D Reference Sphere [' + state.stereo.center + ']</span><span class="text-slate-500">&bull;</span><span class="font-mono text-amber-300">θ = ' + (az.valid ? az.thetaDeg.toFixed(1) + '°' : 'N/A') + '</span>';
         } else {
           const cc = state.customCrystal;
           pill.innerHTML = '<span class="font-semibold text-slate-100">' + esc(cc.name) + '</span><span class="text-slate-500">&bull;</span><span class="font-mono text-emerald-300">' + esc(cc.system) + ' (' + esc(cc.centering) + ')</span>';
@@ -6508,10 +8033,10 @@
 
           const supercells = c.id === 'spinel'
             ? [
-                { key: '1/8', title: '1/8 Cell', sub: '½×½×½' },
-                { key: '1/4', title: '1/4 Cell', sub: '1×½×½' },
-                { key: '1/2', title: '1/2 Cell', sub: '1×1×½' },
-                { key: '1', title: '1 Cell', sub: '1×1×1' }
+                { key: '1/8', title: '1/8 Cell', sub: 'Type A' },
+                { key: '1/4', title: '1/4 Cell', sub: 'A + B' },
+                { key: '1/2', title: '1/2 Cell', sub: '2A + 2B' },
+                { key: '1', title: '1 Cell', sub: '4A + 4B' }
               ]
             : [
                 { key: '1', title: '1 Cell', sub: '1×1×1' },
@@ -6575,8 +8100,47 @@
               '<p class="text-[11px] text-slate-400 leading-relaxed">' + c.notes + '</p>' +
             '</section>' +
             '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
-              '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">' + (c.id === 'spinel' ? 'Spinel Unit Cell Slice' : 'Supercell Expansion') + '</div>' +
+              '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">' + (c.id === 'spinel' ? 'Spinel Octant Decomposition' : 'Supercell Expansion') + '</div>' +
               '<div class="grid grid-cols-4 gap-1">' + scHtml + '</div>' +
+              (c.id === 'spinel'
+                ? '<div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-2 text-[11px]">' +
+                    '<div class="space-y-1">' +
+                      '<div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Octant Origin Convention (Fd-3m)</div>' +
+                      '<div class="grid grid-cols-2 gap-1">' +
+                        '<button type="button" data-sp-set="fcc_o" class="sp-set-btn py-1 px-1.5 rounded-md text-[10px] font-semibold border transition-all ' + (state.spinelSetting === 'fcc_o' ? 'bg-sky-500/25 border-sky-400 text-sky-200' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200') + '">FCC-O²⁻ Octants</button>' +
+                        '<button type="button" data-sp-set="origin1" class="sp-set-btn py-1 px-1.5 rounded-md text-[10px] font-semibold border transition-all ' + (state.spinelSetting === 'origin1' ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200') + '">Origin 1 (Al₄O₄)</button>' +
+                      '</div>' +
+                    '</div>' +
+                    '<div class="text-sky-300 font-medium leading-snug">' +
+                      (state.spinelSetting === 'origin1'
+                        ? (state.supercell === '1/8'
+                            ? 'Origin 1 • Type A ([0, ½]³): Standalone central Al₄O₄ heterocubane cube (4 Al + 4 O interior) + 4 alternating corner Mg²⁺.'
+                            : state.supercell === '1/4'
+                            ? 'Origin 1 • Type A + Type B (2×1×1): Contrasts the standalone Al₄O₄ heterocubane (A) against the centered yellow MgO₄ tetrahedron (B).'
+                            : state.supercell === '1/2'
+                            ? 'Origin 1 • 2×2×1 Layer: 4 alternating heterocubane (A) &amp; tetrahedral (B) octants in checkerboard order.'
+                            : 'Origin 1 • Full 2×2×2 Unit Cell: 4 Type A + 4 Type B octants = 8 Mg + 16 Al + 32 O (56 atoms/cell).')
+                        : (state.supercell === '1/8'
+                            ? 'FCC-O²⁻ • Type A ([0, ½]³): FCC O²⁻ sub-cage + 0 Mg²⁺ + interior &amp; edge Al³⁺ forming AlO₆ &amp; dual Al₄O₄ heterocubanes.'
+                            : state.supercell === '1/4'
+                            ? 'FCC-O²⁻ • Type A + Type B (2×1×1): Contrasts octahedral Al₄O₄ heterocubanes (A) with 2 yellow MgO₄ tetrahedra in opposite mini-octants (B).'
+                            : state.supercell === '1/2'
+                            ? 'FCC-O²⁻ • 2×2×1 Layer: 4 alternating Type A &amp; Type B octants in a checkerboard pattern.'
+                            : 'FCC-O²⁻ • Full 2×2×2 Unit Cell: 4 Type A + 4 Type B octants = 8 Mg + 16 Al + 32 O (56 atoms/cell).')) +
+                    '</div>' +
+                    '<div class="grid grid-cols-2 gap-1.5 text-[10px] pt-1 border-t border-slate-800/80">' +
+                      (state.spinelSetting === 'origin1'
+                        ? '<div class="bg-slate-950/70 rounded p-1.5 border border-emerald-500/30"><span class="font-semibold text-emerald-300">Type A</span><div class="text-slate-400 mt-0.5">4 Al + 4 O (Al₄O₄) • 0.5 net Mg</div></div>' +
+                          '<div class="bg-slate-950/70 rounded p-1.5 border border-amber-400/30"><span class="font-semibold text-amber-300">Type B</span><div class="text-slate-400 mt-0.5">1 centered MgO₄ • 0 Al • 1.5 net Mg</div></div>'
+                        : '<div class="bg-slate-950/70 rounded p-1.5 border border-emerald-500/30"><span class="font-semibold text-emerald-300">Type A</span><div class="text-slate-400 mt-0.5">0 Mg • 2.5 net Al (AlO₆ + Al₄O₄)</div></div>' +
+                          '<div class="bg-slate-950/70 rounded p-1.5 border border-amber-400/30"><span class="font-semibold text-amber-300">Type B</span><div class="text-slate-400 mt-0.5">2 Mg (MgO₄) • 1.5 net Al (edges)</div></div>') +
+                    '</div>' +
+                    '<div class="space-y-1 pt-1 border-t border-slate-800/80">' +
+                      '<label class="flex items-center justify-between text-[11px] text-slate-300 cursor-pointer"><span>Internal Octant Dividers</span><input id="chk-spinel-dividers" type="checkbox" ' + (state.showSpinelOctantDividers ? 'checked' : '') + ' class="accent-sky-400" /></label>' +
+                      '<label class="flex items-center justify-between text-[11px] text-slate-300 cursor-pointer"><span>Type A / Type B Labels</span><input id="chk-spinel-labels" type="checkbox" ' + (state.showSpinelOctantLabels ? 'checked' : '') + ' class="accent-emerald-400" /></label>' +
+                    '</div>' +
+                  '</div>'
+                : '') +
             '</section>' +
             '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
               '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Visualization Mode</div>' +
@@ -6622,6 +8186,29 @@
               updateAll();
             });
           });
+          sb.querySelectorAll('.sp-set-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              state.spinelSetting = btn.getAttribute('data-sp-set');
+              state.removedParts = [];
+              state.nnSelectedAtomIdx = null;
+              autoFrameCamera();
+              updateAll();
+            });
+          });
+          const chkSpinelDiv = document.getElementById('chk-spinel-dividers');
+          if (chkSpinelDiv) {
+            chkSpinelDiv.addEventListener('change', (e) => {
+              state.showSpinelOctantDividers = e.target.checked;
+              rebuild3DScene();
+            });
+          }
+          const chkSpinelLbl = document.getElementById('chk-spinel-labels');
+          if (chkSpinelLbl) {
+            chkSpinelLbl.addEventListener('change', (e) => {
+              state.showSpinelOctantLabels = e.target.checked;
+              rebuild3DScene();
+            });
+          }
           sb.querySelectorAll('.mode-btn').forEach((btn) => {
             btn.addEventListener('click', () => {
               state.viewMode = btn.getAttribute('data-mode');
@@ -6912,6 +8499,9 @@
         else if (state.activeTab === 'defects') {
           renderDefectsSidebar(sb);
         }
+        else if (state.activeTab === 'stereographic') {
+          renderStereographicSidebar(sb);
+        }
         else if (state.activeTab === 'mycrystal') {
           renderMyCrystalSidebar(sb);
         }
@@ -6923,6 +8513,7 @@
         else if (state.activeTab === 'miller') dist = 10.2;
         else if (state.activeTab === 'reciprocal') dist = 11.2;
         else if (state.activeTab === 'defects') dist = state.defectMode === 'point' ? 12.8 : 11.2;
+        else if (state.activeTab === 'stereographic') dist = 10.6;
         else if (state.activeTab === 'mycrystal') dist = Math.max(8.5, generateCustomCrystalData(state.customCrystal).boundingRadius * 2.55);
         orbit.targetSpherical.radius = dist;
         orbit.targetPan.set(0, 0, 0);
@@ -6936,6 +8527,7 @@
         rebuild3DScene();
         renderVoidsCoordPanel();
         syncReciprocalOverlays();
+        syncStereographicLayout();
       }
 
       // =========================================================================
@@ -6949,6 +8541,13 @@
         });
       });
 
+      document.querySelectorAll('#stereo-topbar .st-view-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.stereo.viewMode = btn.getAttribute('data-stview');
+          updateAll();
+        });
+      });
+
       document.querySelectorAll('.cam-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           const preset = btn.getAttribute('data-cam');
@@ -6958,6 +8557,12 @@
             if (preset === '100') { const c = fracToCart(1, 0, 0, vecs); dirThree = crystToThree(c[0], c[1], c[2]); }
             else if (preset === '110') { const c = fracToCart(1, 1, 0, vecs); dirThree = crystToThree(c[0], c[1], c[2]); }
             else if (preset === '111') { const c = fracToCart(1, 1, 1, vecs); dirThree = crystToThree(c[0], c[1], c[2]); }
+            else dirThree = new THREE.Vector3(1.15, 0.85, 1.35);
+          } else if (state.activeTab === 'stereographic') {
+            const basis = getStereoBasis(state.stereo.center);
+            if (preset === '100') { const p = crystToProjUnit([1, 0, 0], basis); dirThree = projToThree(p[0], p[1], p[2], 1); }
+            else if (preset === '110') { const p = crystToProjUnit([1, 1, 0], basis); dirThree = projToThree(p[0], p[1], p[2], 1); }
+            else if (preset === '111') { const p = crystToProjUnit([1, 1, 1], basis); dirThree = projToThree(p[0], p[1], p[2], 1); }
             else dirThree = new THREE.Vector3(1.15, 0.85, 1.35);
           } else {
             if (preset === '100') dirThree = crystToThree(1, 0, 0);
@@ -6985,6 +8590,29 @@
         } else if (state.activeTab === 'reciprocal' && state.recipSubTab === 'xrd') {
           const xc = document.getElementById('xrd-canvas');
           if (xc) dataUrl = xc.toDataURL('image/png');
+        } else if (state.activeTab === 'stereographic' && state.stereo.viewMode === '2d') {
+          drawStereo2DCanvas();
+          const sc = document.getElementById('stereo-canvas');
+          if (sc) dataUrl = sc.toDataURL('image/png');
+        } else if (state.activeTab === 'stereographic' && state.stereo.viewMode === 'dual') {
+          renderer.render(scene, camera);
+          drawStereo2DCanvas();
+          const sc = document.getElementById('stereo-canvas');
+          const glc = renderer.domElement;
+          if (sc && glc) {
+            const outC = document.createElement('canvas');
+            const outH = Math.max(glc.height, sc.height, 640);
+            const w1 = Math.round(outH * (glc.width / Math.max(1, glc.height)));
+            const w2 = Math.round(outH * (sc.width / Math.max(1, sc.height)));
+            outC.width = w1 + w2;
+            outC.height = outH;
+            const octx = outC.getContext('2d');
+            octx.fillStyle = state.exportBg === 'white' ? '#ffffff' : '#070b14';
+            octx.fillRect(0, 0, outC.width, outC.height);
+            octx.drawImage(glc, 0, 0, w1, outH);
+            octx.drawImage(sc, w1, 0, w2, outH);
+            dataUrl = outC.toDataURL('image/png');
+          }
         } else {
           const prevPR = renderer.getPixelRatio();
           const prevColor = renderer.getClearColor(new THREE.Color());
@@ -7012,8 +8640,10 @@
           ? 'reciprocal_' + state.recipSubTab + '_' + state.recipCrystalId
           : state.activeTab === 'defects'
           ? 'defects_' + state.defectMode
+          : state.activeTab === 'stereographic'
+          ? 'stereographic_' + state.stereo.center + '_' + state.stereo.viewMode
           : 'mycrystal_' + (state.customCrystal.name.replace(/[^a-z0-9]/gi, '_') || 'custom');
-        const is2DPlot = state.activeTab === 'reciprocal' && (state.recipSubTab === 'bragg' || state.recipSubTab === 'xrd');
+        const is2DPlot = (state.activeTab === 'reciprocal' && (state.recipSubTab === 'bragg' || state.recipSubTab === 'xrd')) || (state.activeTab === 'stereographic' && state.stereo.viewMode === '2d');
         link.download = is2DPlot ? ('atomica_' + tag + '.png') : ('atomica_' + tag + '_' + state.exportBg + '.png');
         link.href = dataUrl;
         document.body.appendChild(link);
@@ -7029,6 +8659,8 @@
         renderHeaderControls();
         if (state.activeTab === 'reciprocal' && state.recipSubTab === 'xrd') {
           requestAnimationFrame(drawXRDCanvas);
+        } else if (state.activeTab === 'stereographic') {
+          syncStereographicLayout();
         }
       });
 
@@ -7128,7 +8760,7 @@
         reportErrorEl.classList.add('hidden');
 
         const customSub = reportSubjectInp.value.trim();
-        const subject = '[Atomica - ' + selectedReportType + '] ' + (customSub || 'User Feedback');
+        const subject = '[ATOMICA - ' + selectedReportType + '] ' + (customSub || 'User Feedback');
         const activeContext = state.activeTab === 'crystals'
           ? 'Crystals (' + getActiveCrystal().name + ', ' + state.supercell + ' cell)'
           : state.activeTab === 'miller'
@@ -7139,6 +8771,8 @@
           ? 'Reciprocal (' + state.recipSubTab + ', ' + getRecipCrystal().name + ')'
           : state.activeTab === 'defects'
           ? 'Defects (' + state.defectMode + ')'
+          : state.activeTab === 'stereographic'
+          ? 'Stereographic ([' + state.stereo.center + '], ' + state.stereo.poles.length + ' poles)'
           : 'My Crystal (' + state.customCrystal.name + ')';
 
         const fullBody = msg + '\n\n---\nActive View: ' + activeContext;
@@ -7203,8 +8837,63 @@
           }
         });
       }
+      // Stereographic 2D Canvas interactive hover & click-to-select P1 / P2
+      const stereoCanvasEl = document.getElementById('stereo-canvas');
+      if (stereoCanvasEl) {
+        const findNearestStereoHit = (clientX, clientY) => {
+          const rect = stereoCanvasEl.getBoundingClientRect();
+          const mx = clientX - rect.left;
+          const my = clientY - rect.top;
+          let best = null, bestD = 16;
+          for (let i = 0; i < stereoCanvasHitTargets.length; i++) {
+            const t = stereoCanvasHitTargets[i];
+            const d = Math.hypot(t.px - mx, t.py - my);
+            if (d < bestD) { bestD = d; best = t; }
+          }
+          return best;
+        };
+
+        stereoCanvasEl.addEventListener('mousemove', (e) => {
+          if (state.activeTab !== 'stereographic') return;
+          const hit = findNearestStereoHit(e.clientX, e.clientY);
+          const hud = document.getElementById('stereo-2d-hud');
+          const nextId = hit ? hit.pole.id : null;
+          if (hit && hud) {
+            const openB = hit.pole.kind === 'dir' ? '[' : '(';
+            const closeB = hit.pole.kind === 'dir' ? ']' : ')';
+            const polarDeg = (Math.acos(Math.max(-1, Math.min(1, hit.proj[2]))) * 180) / Math.PI;
+            hud.textContent = formatMillerPlain(hit.pole.hkl, openB, closeB) + ' • ' +
+              (hit.upper ? 'Upper (●)' : 'Lower (○)') + ' • ρ = ' + polarDeg.toFixed(1) + '° • Click to set P' + state.stereo.nextSelectSlot;
+          } else if (hud) {
+            hud.textContent = 'Click any two poles to measure θ & Zone Axis [UVW]';
+          }
+          if (state.stereo.hoveredPoleId !== nextId) {
+            state.stereo.hoveredPoleId = nextId;
+            drawStereo2DCanvas();
+          }
+        });
+
+        stereoCanvasEl.addEventListener('mouseleave', () => {
+          if (state.stereo.hoveredPoleId !== null) {
+            state.stereo.hoveredPoleId = null;
+            drawStereo2DCanvas();
+          }
+          const hud = document.getElementById('stereo-2d-hud');
+          if (hud) hud.textContent = 'Click any two poles to measure θ & Zone Axis [UVW]';
+        });
+
+        stereoCanvasEl.addEventListener('click', (e) => {
+          if (state.activeTab !== 'stereographic') return;
+          const hit = findNearestStereoHit(e.clientX, e.clientY);
+          if (hit) {
+            selectStereoPoleForMeasure(hit.pole.hkl, hit.pole.id);
+          }
+        });
+      }
+
       window.addEventListener('resize', () => {
         if (state.activeTab === 'reciprocal' && state.recipSubTab === 'xrd') drawXRDCanvas();
+        if (state.activeTab === 'stereographic') drawStereo2DCanvas();
       });
 
       // Initial render
