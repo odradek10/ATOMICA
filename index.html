@@ -2120,8 +2120,14 @@
         // Tab 5: Defects Sandbox
         defectMode: 'point',
         defectLattice: 'FCC',
+        defectSupercell: '4',
         defectTool: 'vacancy',
         defectDopantSize: 'large',
+        defectTemp: 1000,
+        defectQ: 0.34,
+        defectThermoSync: true,
+        defectAutoHop: false,
+        defectLastAutoHopTime: 0,
         defectVacancies: [],
         defectInterstitials: [],
         defectSubstitutionals: {},
@@ -2488,8 +2494,16 @@
         if (state.activeTab === 'stereographic' && state.stereo.viewMode === '2d') {
           return;
         }
-        if (state.activeTab === 'defects' && state.defectHopAnim) {
-          updateDefectHopAnimation(now);
+        if (state.activeTab === 'defects') {
+          if (state.defectHopAnim) {
+            updateDefectHopAnimation(now);
+          } else if (state.defectMode === 'point' && state.defectAutoHop && state.defectVacancies.length > 0) {
+            const th = computeDefectThermodynamics();
+            if (now - state.defectLastAutoHopTime >= th.autoHopDelayMs) {
+              state.defectLastAutoHopTime = now;
+              triggerVacancyDiffusionHop(true);
+            }
+          }
         }
         renderer.render(scene, camera);
       }
@@ -3799,8 +3813,99 @@
         parent.add(mesh);
       }
 
+      const KB_EV_PER_K = 8.617333262e-5; // Boltzmann constant (eV/K)
+      const DEBYE_NU0 = 1e13;             // Typical lattice attempt frequency (s^-1)
+
+      function formatSciNotation(val) {
+        if (!Number.isFinite(val) || val <= 0) return '0';
+        if (val >= 0.01 && val < 1000) return val.toFixed(4);
+        const exp = Math.floor(Math.log10(val));
+        const mant = val / Math.pow(10, exp);
+        const supMap = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+        const expStr = String(exp).split('').map((c) => supMap[c] || c).join('');
+        return mant.toFixed(2) + ' × 10' + expStr;
+      }
+
+      function computeDefectThermodynamics() {
+        const ds = getDefectHostData();
+        const N = ds.sites.length;
+        const T = Math.max(100, Number(state.defectTemp) || 1000);
+        const Q = Math.max(0.05, Number(state.defectQ) || 0.34);
+        const kT = KB_EV_PER_K * T;
+        const ratioArg = Q / kT;
+        const nOverN = Math.exp(-ratioArg);
+        const expectedFloat = N * nOverN;
+        const maxAllowed = Math.max(1, Math.floor(N * 0.45));
+        const targetVacancies = Math.min(maxAllowed, Math.round(expectedFloat));
+        const jumpFreq = DEBYE_NU0 * nOverN;
+        // Map dimensionless barrier Q/(kT) cleanly to animation kinetics
+        const hopDurationMs = Math.round(Math.max(280, Math.min(2100, 280 + Math.max(0, ratioArg - 1.2) * 130)));
+        const autoHopDelayMs = Math.round(Math.max(110, Math.min(2600, 110 + Math.max(0, ratioArg - 1.5) * 170)));
+        const oneInAtoms = nOverN > 1e-18 ? Math.round(1 / nOverN) : Infinity;
+        return {
+          N: N,
+          T: T,
+          Q: Q,
+          kT: kT,
+          ratioArg: ratioArg,
+          nOverN: nOverN,
+          expectedFloat: expectedFloat,
+          targetVacancies: targetVacancies,
+          jumpFreq: jumpFreq,
+          hopDurationMs: hopDurationMs,
+          autoHopDelayMs: autoHopDelayMs,
+          oneInAtoms: oneInAtoms
+        };
+      }
+
+      function syncThermodynamicVacancies() {
+        if (!state.defectThermoSync) return false;
+        const ds = getDefectHostData();
+        const th = computeDefectThermodynamics();
+        const target = th.targetVacancies;
+        const cur = state.defectVacancies.length;
+        if (cur === target) return false;
+
+        if (target > cur) {
+          const vacSet = new Set(state.defectVacancies);
+          const need = target - cur;
+          let added = 0;
+          for (let i = 0; i < ds.thermoOrder.length && added < need; i++) {
+            const sIdx = ds.thermoOrder[i];
+            if (vacSet.has(sIdx)) continue;
+            if (state.defectSubstitutionals[sIdx]) continue;
+            vacSet.add(sIdx);
+            state.defectVacancies.push(sIdx);
+            added += 1;
+          }
+          // Fallback if remaining sites had dopants
+          for (let i = 0; i < ds.thermoOrder.length && added < need; i++) {
+            const sIdx = ds.thermoOrder[i];
+            if (vacSet.has(sIdx)) continue;
+            delete state.defectSubstitutionals[sIdx];
+            vacSet.add(sIdx);
+            state.defectVacancies.push(sIdx);
+            added += 1;
+          }
+        } else {
+          const protectedSet = new Set();
+          state.defectFrenkels.forEach((fr) => protectedSet.add(fr.siteIdx));
+          state.defectSchottkys.forEach((sc) => { protectedSet.add(sc.catIdx); protectedSet.add(sc.anIdx); });
+          let toRemove = cur - target;
+          for (let i = state.defectVacancies.length - 1; i >= 0 && toRemove > 0; i--) {
+            const vIdx = state.defectVacancies[i];
+            if (!protectedSet.has(vIdx)) {
+              state.defectVacancies.splice(i, 1);
+              toRemove -= 1;
+            }
+          }
+        }
+        return true;
+      }
+
       function getDefectHostData() {
-        if (cachedDefectHostKey === state.defectLattice && cachedDefectHostData) return cachedDefectHostData;
+        const cacheKey = state.defectLattice + '|' + state.defectSupercell;
+        if (cachedDefectHostKey === cacheKey && cachedDefectHostData) return cachedDefectHostData;
         const type = state.defectLattice;
         let a = 3.6, basis = [], nnMax = 2.65, bulkCN = 12, intShifts = [];
         if (type === 'FCC') {
@@ -3867,9 +3972,12 @@
           ];
         }
 
-        const nx = type === 'NaCl' ? 1 : 2;
-        const ny = type === 'NaCl' ? 1 : 2;
-        const nz = type === 'NaCl' ? 1 : 2;
+        const dims = state.defectSupercell === '4'
+          ? [2, 2, 1]
+          : state.defectSupercell === '2'
+          ? [2, 1, 1]
+          : [1, 1, 1];
+        const nx = dims[0], ny = dims[1], nz = dims[2];
         const halfX = nx * a * 0.5, halfY = ny * a * 0.5, halfZ = nz * a * 0.5;
         const sites = [];
         const tolSq = 0.02;
@@ -3936,12 +4044,70 @@
           }
         }
 
-        cachedDefectHostKey = type;
-        cachedDefectHostData = { type: type, a: a, nx: nx, ny: ny, nz: nz, nnMax: nnMax, bulkCN: bulkCN, sites: sites, interstices: interstices };
+        // Build individual unit-cell wireframe edges (1, 2, or 4 cells)
+        const cellEdges = [];
+        const edgeKeys = new Set();
+        const uCorners = [
+          [0,0,0],[1,0,0],[1,1,0],[0,1,0],
+          [0,0,1],[1,0,1],[1,1,1],[0,1,1]
+        ];
+        const uPairs = [
+          [0,1],[1,2],[2,3],[3,0],
+          [4,5],[5,6],[6,7],[7,4],
+          [0,4],[1,5],[2,6],[3,7]
+        ];
+        for (let ix = 0; ix < nx; ix++) {
+          for (let iy = 0; iy < ny; iy++) {
+            for (let iz = 0; iz < nz; iz++) {
+              uPairs.forEach((pr) => {
+                const pa = [uCorners[pr[0]][0] + ix, uCorners[pr[0]][1] + iy, uCorners[pr[0]][2] + iz];
+                const pb = [uCorners[pr[1]][0] + ix, uCorners[pr[1]][1] + iy, uCorners[pr[1]][2] + iz];
+                const ka = pa.join(','), kb = pb.join(',');
+                const key = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+                if (!edgeKeys.has(key)) {
+                  edgeKeys.add(key);
+                  cellEdges.push([
+                    crystToThree(pa[0] * a - halfX, pa[1] * a - halfY, pa[2] * a - halfZ),
+                    crystToThree(pb[0] * a - halfX, pb[1] * a - halfY, pb[2] * a - halfZ)
+                  ]);
+                }
+              });
+            }
+          }
+        }
+
+        // Deterministic site nucleation order (well-distributed from interior outward so slider feels smooth)
+        const thermoOrder = sites.map((s, idx) => {
+          const dCenter = s.pos.length();
+          const hash = ((idx * 2654435761) >>> 0) / 4294967296;
+          return { idx: idx, score: dCenter * 0.65 + hash * 1.85 };
+        }).sort((u, v) => u.score - v.score).map((item) => item.idx);
+
+        let maxR = 2.0;
+        sites.forEach((s) => {
+          const r = s.pos.length();
+          if (r > maxR) maxR = r;
+        });
+
+        cachedDefectHostKey = cacheKey;
+        cachedDefectHostData = {
+          type: type,
+          a: a,
+          nx: nx,
+          ny: ny,
+          nz: nz,
+          nnMax: nnMax,
+          bulkCN: bulkCN,
+          sites: sites,
+          interstices: interstices,
+          cellEdges: cellEdges,
+          thermoOrder: thermoOrder,
+          boundingRadius: maxR + 1.15
+        };
         return cachedDefectHostData;
       }
 
-      function resetDefectState() {
+      function resetDefectState(keepSync) {
         state.defectVacancies = [];
         state.defectInterstitials = [];
         state.defectSubstitutionals = {};
@@ -3950,6 +4116,10 @@
         state.defectLastInfo = null;
         state.defectHopAnim = null;
         state.defectHopCount = 0;
+        state.defectAutoHop = false;
+        if (keepSync && state.defectThermoSync) {
+          syncThermodynamicVacancies();
+        }
       }
 
       function healVacancySite(siteIdx) {
@@ -4151,13 +4321,19 @@
       }
 
       let defectHopMesh = null;
-      function triggerVacancyDiffusionHop() {
+      function getDefectBarrierPeakY(Q) {
+        const qNorm = Math.max(0, Math.min(1, (Q - 0.10) / 1.70));
+        return 46 - qNorm * 34; // y=46 (low Q=0.10 eV) up to y=12 (high Q=1.80 eV)
+      }
+
+      function triggerVacancyDiffusionHop(silent) {
         if (state.defectVacancies.length === 0) {
-          showToast('Create a vacancy first to simulate diffusion');
+          if (!silent) showToast('No vacancies in cell — raise T, lower Q, or click an atom');
           return;
         }
         if (state.defectHopAnim) return;
         const ds = getDefectHostData();
+        const th = computeDefectThermodynamics();
         const vacIdx = state.defectVacancies[Math.floor(Math.random() * state.defectVacancies.length)];
         const vacSite = ds.sites[vacIdx];
         const vacSet = new Set(state.defectVacancies);
@@ -4175,11 +4351,12 @@
             if (d < bestD) { bestD = d; hopFromIdx = s.idx; }
           });
         }
-        if (hopFromIdx < 0) { showToast('No eligible neighbor atom to hop'); return; }
+        if (hopFromIdx < 0) { if (!silent) showToast('No eligible neighbor atom to hop'); return; }
 
         state.defectHopAnim = {
           startTime: performance.now(),
-          duration: 1150,
+          duration: th.hopDurationMs,
+          peakY: getDefectBarrierPeakY(th.Q),
           fromIdx: hopFromIdx,
           toIdx: vacIdx,
           fromPos: ds.sites[hopFromIdx].pos.clone(),
@@ -4187,7 +4364,9 @@
           el: ds.sites[hopFromIdx].el,
           progress: 0
         };
-        showToast('Simulating thermally activated vacancy diffusion hop...');
+        if (!silent) {
+          showToast('Thermal hop at T=' + th.T + ' K (Γ = ' + formatSciNotation(th.jumpFreq) + ' s⁻¹)');
+        }
         rebuild3DScene();
       }
 
@@ -4208,7 +4387,8 @@
         if (dot) {
           const x = 18 + rawT * 184;
           const barrier = Math.sin(rawT * Math.PI);
-          const y = 62 - barrier * barrier * 42;
+          const peakH = 62 - (anim.peakY !== undefined ? anim.peakY : 20);
+          const y = 62 - barrier * barrier * peakH;
           dot.setAttribute('cx', x.toFixed(1));
           dot.setAttribute('cy', y.toFixed(1));
         }
@@ -4236,13 +4416,15 @@
             delete state.defectSubstitutionals[anim.toIdx];
           }
           state.defectHopCount += 1;
+          const thDone = computeDefectThermodynamics();
           state.defectLastInfo = {
             kind: 'Diffusion Hop #' + state.defectHopCount,
             title: anim.el + ' Hopped: Site #' + (anim.fromIdx + 1) + ' → #' + (anim.toIdx + 1),
-            cnText: 'Vacancy migrated to Site #' + (anim.fromIdx + 1) + ' (overcame Eₐ barrier)',
-            note: 'Vacancy-mediated self-diffusion moves atoms opposite to vacancy flux.'
+            cnText: 'T=' + thDone.T + ' K, Q=' + thDone.Q.toFixed(2) + ' eV  |  Γ ≈ ' + formatSciNotation(thDone.jumpFreq) + ' s⁻¹',
+            note: 'Vacancy migrated to Site #' + (anim.fromIdx + 1) + ' via Boltzmann jump exp(−Q/kT) = ' + formatSciNotation(thDone.nOverN) + '.'
           };
           state.defectHopAnim = null;
+          state.defectLastAutoHopTime = now;
           defectHopMesh = null;
           updateAll();
         }
@@ -4256,13 +4438,16 @@
           const vacSet = new Set(state.defectVacancies);
           const hopFromIdx = state.defectHopAnim ? state.defectHopAnim.fromIdx : -1;
 
-          const bx = ds.nx * ds.a, by = ds.ny * ds.a, bz = ds.nz * ds.a;
-          const boxGeo = new THREE.BoxGeometry(by, bz, bx);
+          const cellVerts = [];
+          ds.cellEdges.forEach((e) => {
+            cellVerts.push(e[0].x, e[0].y, e[0].z, e[1].x, e[1].y, e[1].z);
+          });
+          const cellGeo = new THREE.BufferGeometry();
+          cellGeo.setAttribute('position', new THREE.Float32BufferAttribute(cellVerts, 3));
           contentGroup.add(new THREE.LineSegments(
-            new THREE.EdgesGeometry(boxGeo),
-            new THREE.LineBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.55 })
+            cellGeo,
+            new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.72 })
           ));
-          boxGeo.dispose();
 
           const strainVecs = ds.sites.map(() => new THREE.Vector3());
           const neighborHighlight = {};
@@ -4662,20 +4847,45 @@
               '</div>'
             : '<div class="bg-slate-900/60 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-400">Click any atom (or interstitial marker) in 3D to create a <strong class="text-slate-200">' + esc(state.defectTool) + '</strong> defect.</div>';
 
+          const th = computeDefectThermodynamics();
           const hasVac = state.defectVacancies.length > 0;
+          const peakY = getDefectBarrierPeakY(th.Q);
+          const kTY = Math.max(18, 62 - Math.min(1, th.kT / 0.25) * 34);
+          const cellOpts = [
+            { key: '1', title: '1 Cell', sub: '1×1×1' },
+            { key: '2', title: '2 Cells', sub: '2×1×1' },
+            { key: '4', title: '4 Cells', sub: '2×2×1' }
+          ];
+          const thermoPresets = [
+            { label: 'Demo (0.34 eV)', q: 0.34, t: 1000 },
+            { label: 'Al (0.67 eV)', q: 0.67, t: 900 },
+            { label: 'Cu (1.10 eV)', q: 1.10, t: 1300 }
+          ];
+          const diluteTxt = th.targetVacancies === 0 && th.oneInAtoms < 1e12
+            ? ('≈ 1 vac / ' + th.oneInAtoms.toLocaleString() + ' atoms')
+            : (th.expectedFloat.toFixed(2) + ' expected in ' + th.N + ' sites');
+
           const eaSvg =
-            '<div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2 space-y-1">' +
-              '<div class="flex justify-between text-[10px] text-slate-400"><span>Activation Energy Barrier (E<sub>a</sub>)</span><span class="font-mono text-amber-300">Hops: ' + state.defectHopCount + '</span></div>' +
+            '<div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2 space-y-1.5">' +
+              '<div class="flex justify-between text-[10px] text-slate-400"><span>Activation Barrier (Q = <span id="ea-q-badge" class="text-amber-300 font-mono">' + th.Q.toFixed(2) + ' eV</span>)</span><span class="font-mono text-amber-300">Hops: ' + state.defectHopCount + '</span></div>' +
               '<svg viewBox="0 0 220 76" class="w-full h-16">' +
                 '<line x1="14" y1="64" x2="208" y2="64" stroke="#475569" stroke-width="1" />' +
-                '<path d="M 18 62 C 55 62, 75 20, 110 20 C 145 20, 165 62, 202 62" fill="none" stroke="#38bdf8" stroke-width="2" />' +
-                '<line x1="110" y1="20" x2="110" y2="62" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3 2" />' +
-                '<text x="115" y="42" fill="#fde047" font-size="9" font-family="monospace">Eₐ</text>' +
+                '<line id="ea-kt-line" x1="16" y1="' + kTY.toFixed(1) + '" x2="204" y2="' + kTY.toFixed(1) + '" stroke="#fb7185" stroke-width="1" stroke-dasharray="2 3" opacity="0.7" />' +
+                '<text id="ea-kt-txt" x="198" y="' + (kTY - 2.5).toFixed(1) + '" text-anchor="end" fill="#fda4af" font-size="7.5" font-family="monospace">kT=' + th.kT.toFixed(3) + '</text>' +
+                '<path id="ea-barrier-path" d="M 18 62 C 55 62, 75 ' + peakY.toFixed(1) + ', 110 ' + peakY.toFixed(1) + ' C 145 ' + peakY.toFixed(1) + ', 165 62, 202 62" fill="none" stroke="#38bdf8" stroke-width="2" />' +
+                '<line id="ea-peak-line" x1="110" y1="' + peakY.toFixed(1) + '" x2="110" y2="62" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3 2" />' +
+                '<text id="ea-peak-lbl" x="114" y="' + ((62 + peakY) * 0.5 + 3).toFixed(1) + '" fill="#fde047" font-size="8.5" font-family="monospace">Q</text>' +
                 '<text x="20" y="73" fill="#94a3b8" font-size="8" font-family="monospace">Site A</text>' +
                 '<text x="172" y="73" fill="#94a3b8" font-size="8" font-family="monospace">Vacancy</text>' +
                 '<circle id="ea-progress-dot" cx="18" cy="62" r="4.5" fill="#facc15" stroke="#0f172a" stroke-width="1.2" />' +
               '</svg>' +
-              '<button type="button" id="btn-sim-hop" ' + (!hasVac ? 'disabled' : '') + ' class="w-full py-1.5 rounded-lg text-xs font-semibold bg-amber-500/25 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 disabled:opacity-35 disabled:cursor-not-allowed transition-colors">Simulate Diffusion Hop</button>' +
+              '<div class="flex justify-between text-[10px] font-mono text-slate-400"><span>Jump Freq Γ = ν₀e<sup>−Q/kT</sup></span><span id="def-gamma-val" class="text-emerald-300">' + formatSciNotation(th.jumpFreq) + ' s⁻¹</span></div>' +
+              '<div class="grid grid-cols-5 gap-1.5">' +
+                '<button type="button" id="btn-sim-hop" ' + (!hasVac ? 'disabled' : '') + ' class="col-span-3 py-1.5 rounded-lg text-[11px] font-semibold bg-amber-500/25 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 disabled:opacity-35 disabled:cursor-not-allowed transition-colors">Simulate Diffusion Hop</button>' +
+                '<button type="button" id="btn-auto-hop" ' + (!hasVac ? 'disabled' : '') + ' class="col-span-2 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors disabled:opacity-35 disabled:cursor-not-allowed ' +
+                  (state.defectAutoHop ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200' : 'bg-slate-950 hover:bg-slate-800 border-slate-700 text-slate-300') +
+                '">' + (state.defectAutoHop ? 'Stop Auto' : 'Auto-Hop') + '</button>' +
+              '</div>' +
             '</div>';
 
           bodyHtml =
@@ -4688,7 +4898,46 @@
                   '">' + l.label + '</button>'
                 ).join('') +
               '</div>' +
+              '<div class="pt-1 space-y-1">' +
+                '<div class="flex items-center justify-between text-[11px]"><span class="text-slate-400 font-medium">Unit Cell Size</span><span class="font-mono text-[10px] text-sky-300">' + th.N + ' lattice sites</span></div>' +
+                '<div class="grid grid-cols-3 gap-1">' +
+                  cellOpts.map((opt) =>
+                    '<button type="button" data-dsc="' + opt.key + '" class="dsc-btn py-1.5 px-1 rounded-lg border text-center transition-all ' +
+                    (state.defectSupercell === opt.key ? 'bg-sky-500/20 border-sky-400/60 text-sky-200' : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200') +
+                    '"><div class="text-[11px] font-semibold">' + opt.title + '</div><div class="text-[9px] font-mono opacity-80">' + opt.sub + '</div></button>'
+                  ).join('') +
+                '</div>' +
+              '</div>' +
             '</section>' +
+
+            '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
+              '<div class="flex items-center justify-between">' +
+                '<span class="text-xs font-semibold uppercase tracking-wider text-rose-300">Defect Concentration</span>' +
+                '<span class="font-mono text-[10px] text-amber-300">n/N = e<sup>−Q/kT</sup></span>' +
+              '</div>' +
+              '<div class="bg-slate-900/85 border border-slate-800 rounded-lg p-2.5 space-y-2">' +
+                '<div class="space-y-1">' +
+                  '<div class="flex justify-between text-[11px]"><span class="text-slate-300">Temperature (T)</span><span id="def-temp-val" class="font-mono text-rose-300 font-semibold">' + th.T + ' K</span></div>' +
+                  '<input id="inp-def-temp" type="range" min="300" max="2500" step="25" value="' + th.T + '" class="w-full h-1.5 rounded-lg cursor-pointer" />' +
+                '</div>' +
+                '<div class="space-y-1">' +
+                  '<div class="flex justify-between text-[11px]"><span class="text-slate-300">Activation Energy (Q)</span><span id="def-q-val" class="font-mono text-amber-300 font-semibold">' + th.Q.toFixed(2) + ' eV</span></div>' +
+                  '<input id="inp-def-q" type="range" min="0.10" max="1.80" step="0.02" value="' + th.Q + '" class="w-full h-1.5 rounded-lg cursor-pointer" />' +
+                '</div>' +
+                '<div class="flex flex-wrap gap-1 pt-0.5">' +
+                  thermoPresets.map((p) =>
+                    '<button type="button" data-tpq="' + p.q + '" data-tpt="' + p.t + '" class="def-tpreset-btn px-1.5 py-0.5 rounded bg-slate-950 hover:bg-sky-500/20 border border-slate-800 text-[9.5px] font-mono text-slate-300 hover:text-sky-200 transition-colors">' + p.label + '</button>'
+                  ).join('') +
+                '</div>' +
+                '<div class="bg-slate-950/80 border border-slate-800/90 rounded-md p-2 space-y-1 text-[10.5px] font-mono">' +
+                  '<div class="flex justify-between"><span class="text-slate-400 font-sans">Equilibrium n/N</span><span id="def-ratio-val" class="text-sky-300 font-bold">' + formatSciNotation(th.nOverN) + '</span></div>' +
+                  '<div class="flex justify-between"><span class="text-slate-400 font-sans">3D Cell Vacancies (n)</span><span id="def-vac-count-val" class="text-rose-300 font-bold">' + state.defectVacancies.length + ' / ' + th.N + ' sites</span></div>' +
+                  '<div id="def-dilute-val" class="text-[9.5px] text-slate-400 font-sans">' + diluteTxt + '</div>' +
+                '</div>' +
+                '<label class="flex items-center justify-between text-[11px] text-slate-300 cursor-pointer pt-0.5"><span>Auto-Sync 3D Vacancies to n/N</span><input id="chk-def-thermo-sync" type="checkbox" ' + (state.defectThermoSync ? 'checked' : '') + ' class="accent-rose-400" /></label>' +
+              '</div>' +
+            '</section>' +
+
             '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
               '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Point Defect Tool (0D)</div>' +
               '<div class="grid grid-cols-2 gap-1.5">' +
@@ -4752,17 +5001,109 @@
         sb.querySelectorAll('.dlat-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
             state.defectLattice = btn.getAttribute('data-dlat');
-            resetDefectState();
+            resetDefectState(true);
             autoFrameCamera();
             updateAll();
           });
         });
+        sb.querySelectorAll('.dsc-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            state.defectSupercell = btn.getAttribute('data-dsc');
+            resetDefectState(true);
+            autoFrameCamera();
+            updateAll();
+          });
+        });
+
+        const applyThermoSliderLive = () => {
+          const prevCount = state.defectVacancies.length;
+          if (state.defectThermoSync) syncThermodynamicVacancies();
+          const thLive = computeDefectThermodynamics();
+          const tEl = document.getElementById('def-temp-val');
+          const qEl = document.getElementById('def-q-val');
+          const rEl = document.getElementById('def-ratio-val');
+          const vcEl = document.getElementById('def-vac-count-val');
+          const dlEl = document.getElementById('def-dilute-val');
+          const gEl = document.getElementById('def-gamma-val');
+          const qbEl = document.getElementById('ea-q-badge');
+          if (tEl) tEl.textContent = thLive.T + ' K';
+          if (qEl) qEl.textContent = thLive.Q.toFixed(2) + ' eV';
+          if (rEl) rEl.textContent = formatSciNotation(thLive.nOverN);
+          if (vcEl) vcEl.textContent = state.defectVacancies.length + ' / ' + thLive.N + ' sites';
+          if (dlEl) {
+            dlEl.textContent = thLive.targetVacancies === 0 && thLive.oneInAtoms < 1e12
+              ? ('≈ 1 vac / ' + thLive.oneInAtoms.toLocaleString() + ' atoms')
+              : (thLive.expectedFloat.toFixed(2) + ' expected in ' + thLive.N + ' sites');
+          }
+          if (gEl) gEl.textContent = formatSciNotation(thLive.jumpFreq) + ' s⁻¹';
+          if (qbEl) qbEl.textContent = thLive.Q.toFixed(2) + ' eV';
+
+          const pY = getDefectBarrierPeakY(thLive.Q);
+          const kY = Math.max(18, 62 - Math.min(1, thLive.kT / 0.25) * 34);
+          const bPath = document.getElementById('ea-barrier-path');
+          const pLine = document.getElementById('ea-peak-line');
+          const pLbl = document.getElementById('ea-peak-lbl');
+          const ktLine = document.getElementById('ea-kt-line');
+          const ktTxt = document.getElementById('ea-kt-txt');
+          if (bPath) bPath.setAttribute('d', 'M 18 62 C 55 62, 75 ' + pY.toFixed(1) + ', 110 ' + pY.toFixed(1) + ' C 145 ' + pY.toFixed(1) + ', 165 62, 202 62');
+          if (pLine) pLine.setAttribute('y1', pY.toFixed(1));
+          if (pLbl) pLbl.setAttribute('y', ((62 + pY) * 0.5 + 3).toFixed(1));
+          if (ktLine) { ktLine.setAttribute('y1', kY.toFixed(1)); ktLine.setAttribute('y2', kY.toFixed(1)); }
+          if (ktTxt) { ktTxt.setAttribute('y', (kY - 2.5).toFixed(1)); ktTxt.textContent = 'kT=' + thLive.kT.toFixed(3); }
+
+          const hasV = state.defectVacancies.length > 0;
+          const bHop = document.getElementById('btn-sim-hop');
+          const bAuto = document.getElementById('btn-auto-hop');
+          if (bHop) bHop.disabled = !hasV;
+          if (bAuto) {
+            bAuto.disabled = !hasV;
+            if (!hasV && state.defectAutoHop) {
+              state.defectAutoHop = false;
+              bAuto.textContent = 'Auto-Hop';
+            }
+          }
+          renderContextPill();
+          if (state.defectVacancies.length !== prevCount) rebuild3DScene();
+        };
+
+        const inpTemp = document.getElementById('inp-def-temp');
+        if (inpTemp) {
+          inpTemp.addEventListener('input', (e) => {
+            state.defectTemp = parseInt(e.target.value, 10) || 300;
+            applyThermoSliderLive();
+          });
+        }
+        const inpQ = document.getElementById('inp-def-q');
+        if (inpQ) {
+          inpQ.addEventListener('input', (e) => {
+            state.defectQ = parseFloat(e.target.value) || 0.34;
+            applyThermoSliderLive();
+          });
+        }
+        sb.querySelectorAll('.def-tpreset-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            state.defectQ = parseFloat(btn.getAttribute('data-tpq'));
+            state.defectTemp = parseInt(btn.getAttribute('data-tpt'), 10);
+            state.defectThermoSync = true;
+            syncThermodynamicVacancies();
+            updateAll();
+          });
+        });
+        const chkSync = document.getElementById('chk-def-thermo-sync');
+        if (chkSync) {
+          chkSync.addEventListener('change', (e) => {
+            state.defectThermoSync = e.target.checked;
+            if (state.defectThermoSync) syncThermodynamicVacancies();
+            updateAll();
+          });
+        }
+
         sb.querySelectorAll('.dtool-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
             state.defectTool = btn.getAttribute('data-dtool');
             if (state.defectTool === 'schottky' && state.defectLattice !== 'NaCl') {
               state.defectLattice = 'NaCl';
-              resetDefectState();
+              resetDefectState(false);
             }
             updateAll();
           });
@@ -4774,9 +5115,25 @@
           });
         });
         const btnHop = document.getElementById('btn-sim-hop');
-        if (btnHop) btnHop.addEventListener('click', triggerVacancyDiffusionHop);
+        if (btnHop) btnHop.addEventListener('click', () => triggerVacancyDiffusionHop(false));
+        const btnAutoHop = document.getElementById('btn-auto-hop');
+        if (btnAutoHop) {
+          btnAutoHop.addEventListener('click', () => {
+            state.defectAutoHop = !state.defectAutoHop;
+            state.defectLastAutoHopTime = 0;
+            if (state.defectAutoHop) showToast('Thermal Auto-Hop ON (cadence linked to T & Q)');
+            updateAll();
+          });
+        }
         const btnReset = document.getElementById('btn-reset-defects');
-        if (btnReset) btnReset.addEventListener('click', () => { resetDefectState(); showToast('Reset to perfect host lattice'); updateAll(); });
+        if (btnReset) {
+          btnReset.addEventListener('click', () => {
+            state.defectThermoSync = false;
+            resetDefectState(false);
+            showToast('Reset to perfect host lattice (Auto-Sync paused)');
+            updateAll();
+          });
+        }
 
         sb.querySelectorAll('.disl-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
@@ -7996,10 +8353,15 @@
           const c = getRecipCrystal();
           pill.innerHTML = '<span class="font-semibold text-slate-100">Reciprocal Space: ' + c.formula + '</span><span class="text-slate-500">&bull;</span><span class="font-mono text-amber-300">(' + state.recipH + ' ' + state.recipK + ' ' + state.recipL + ')</span>';
         } else if (state.activeTab === 'defects') {
-          const dTitle = state.defectMode === 'point'
-            ? (state.defectLattice + ' Point Defects • ' + state.defectTool)
-            : (state.defectDislocationType === 'edge' ? 'Edge Dislocation (b ⊥ t)' : 'Screw Dislocation (b ∥ t)');
-          pill.innerHTML = '<span class="font-semibold text-slate-100">' + esc(dTitle) + '</span>';
+          if (state.defectMode === 'point') {
+            const scLbl = state.defectSupercell === '1' ? '1 Cell' : (state.defectSupercell + ' Cells');
+            pill.innerHTML = '<span class="font-semibold text-slate-100">' + esc(state.defectLattice) + ' (' + scLbl + ')</span>' +
+              '<span class="text-slate-500">&bull;</span><span class="font-mono text-rose-300">' + state.defectVacancies.length + ' vac</span>' +
+              '<span class="text-slate-500">&bull;</span><span class="font-mono text-amber-300">T=' + state.defectTemp + ' K</span>';
+          } else {
+            const dTitle = state.defectDislocationType === 'edge' ? 'Edge Dislocation (b ⊥ t)' : 'Screw Dislocation (b ∥ t)';
+            pill.innerHTML = '<span class="font-semibold text-slate-100">' + esc(dTitle) + '</span>';
+          }
         } else if (state.activeTab === 'stereographic') {
           const az = computeAngleAndZone(state.stereo.sel1, state.stereo.sel2);
           pill.innerHTML = '<span class="font-semibold text-slate-100">3D Reference Sphere [' + state.stereo.center + ']</span><span class="text-slate-500">&bull;</span><span class="font-mono text-amber-300">θ = ' + (az.valid ? az.thetaDeg.toFixed(1) + '°' : 'N/A') + '</span>';
@@ -8512,7 +8874,7 @@
         if (state.activeTab === 'crystals') dist = Math.max(8.5, getCrystalData().boundingRadius * 2.55);
         else if (state.activeTab === 'miller') dist = 10.2;
         else if (state.activeTab === 'reciprocal') dist = 11.2;
-        else if (state.activeTab === 'defects') dist = state.defectMode === 'point' ? 12.8 : 11.2;
+        else if (state.activeTab === 'defects') dist = state.defectMode === 'point' ? Math.max(7.4, getDefectHostData().boundingRadius * 2.45) : 11.2;
         else if (state.activeTab === 'stereographic') dist = 10.6;
         else if (state.activeTab === 'mycrystal') dist = Math.max(8.5, generateCustomCrystalData(state.customCrystal).boundingRadius * 2.55);
         orbit.targetSpherical.radius = dist;
@@ -8535,7 +8897,12 @@
       // =========================================================================
       document.querySelectorAll('.tab-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
-          state.activeTab = btn.getAttribute('data-tab');
+          const nextTab = btn.getAttribute('data-tab');
+          if (nextTab !== 'defects') state.defectAutoHop = false;
+          state.activeTab = nextTab;
+          if (nextTab === 'defects' && state.defectMode === 'point' && state.defectThermoSync && state.defectVacancies.length === 0) {
+            syncThermodynamicVacancies();
+          }
           autoFrameCamera();
           updateAll();
         });
@@ -8898,6 +9265,7 @@
 
       // Initial render
       syncBraggDFromHKL();
+      syncThermodynamicVacancies();
       autoFrameCamera();
       updateAll();
     })();
