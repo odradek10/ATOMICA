@@ -32,7 +32,7 @@ If you spot anything that doesn't match your textbook, please tell me (see "Feed
 | **Reciprocal** | how real-space planes become reciprocal-lattice points, Bragg's law, and XRD peaks |
 | **Defects** | how vacancies, interstitials, dopants and dislocations distort a lattice, and how temperature controls vacancy concentration |
 | **Stereographic** | how 3D plane normals are flattened onto a 2D stereogram, and how to measure angles and zone axes |
-| **My Crystal** | how "space lattice + basis = crystal structure" by building your own |
+| **My Crystal** | build your own crystal by changing parameters, angles etc, but you need to maintain Bravais lattices |
 
 ---
 
