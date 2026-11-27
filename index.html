@@ -4929,6 +4929,7 @@
                   '<div id="def-dilute-val" class="text-[9.5px] text-slate-400 font-sans">' + diluteTxt + '</div>' +
                 '</div>' +
                 '<label class="flex items-center justify-between text-[11px] text-slate-300 cursor-pointer pt-0.5"><span>Auto-Sync 3D Vacancies to n/N</span><input id="chk-def-thermo-sync" type="checkbox" ' + (state.defectThermoSync ? 'checked' : '') + ' class="accent-rose-400" /></label>' +
+                '<div class="bg-sky-500/10 border border-sky-500/30 rounded-lg p-2 text-[10.5px] text-sky-200 leading-relaxed">Here Vacancy formation and Vacancy Migration Energy are assumed to be same for simplicity. This assumption is not valid in real life, pls be careful about that🙌</div>' +
               '</div>' +
             '</section>' +
 
@@ -8512,6 +8513,7 @@
                 '<div class="col-span-2 bg-slate-900/80 rounded-lg p-2 border border-slate-800 font-mono text-[11px] text-slate-300"><div class="text-[10px] font-sans text-slate-400 uppercase mb-0.5">' + c.spaceGroup + '</div>a=' + c.cell.a.toFixed(2) + ' b=' + c.cell.b.toFixed(2) + ' c=' + c.cell.c.toFixed(2) + ' Å<div class="text-slate-400">α=' + c.cell.alpha + '° β=' + c.cell.beta + '° γ=' + c.cell.gamma + '°</div></div>' +
               '</div>' +
               '<div class="space-y-1.5 pt-1"><div class="text-[11px] text-slate-400 font-medium">Species Visibility</div><div class="flex flex-wrap gap-1.5">' + speciesHtml + '</div></div>' +
+              '<div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 text-[11px] text-amber-200 leading-relaxed">Kindly cross-check the APF and radius values with your textbook, I collected them from the internet🤷‍♂️</div>' +
             '</section>' +
             '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
               '<div class="flex items-center justify-between"><div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Removed Parts (' + state.removedParts.length + ')</div>' +
