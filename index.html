@@ -2126,6 +2126,7 @@
         braggSyncedHkl: 'Synced (1 1 1)',
         xrdFwhm: 0.55,
         xrdShowForbidden: true,
+        importedCifs: [],
 
         // Tab 5: Defects Sandbox
         defectMode: 'point',
@@ -2189,6 +2190,8 @@
           latticeOnly: false,
           supercell: '1',
           showBonds: true,
+          removedParts: [],
+          animateRejoin: true,
           validationError: ''
         }
       };
@@ -2421,6 +2424,12 @@
         } else if (state.activeTab === 'stereographic' && ud.stereoHkl) {
           tooltipEl.classList.add('hidden');
           selectStereoPoleForMeasure(ud.stereoHkl, ud.stereoPoleId);
+        } else if (state.activeTab === 'mycrystal') {
+          if (ud.partId && !state.customCrystal.removedParts.some((p) => p.id === ud.partId)) {
+            state.customCrystal.removedParts.push({ id: ud.partId, label: ud.partLabel, type: ud.partType });
+            tooltipEl.classList.add('hidden');
+            updateAll();
+          }
         } else if (state.activeTab === 'voids' && ud.voidId) {
           if (state.voidClickMode === 'remove' || e.shiftKey) {
             if (!state.removedVoidIds.includes(ud.voidId)) {
@@ -2638,8 +2647,46 @@
         { sym: 'Pt', name: 'Platinum',   Z: 78, color: '#cbd5e1', radius: 1.39, covalent: 1.36 },
         { sym: 'Au', name: 'Gold',       Z: 79, color: '#facc15', radius: 1.44, covalent: 1.36 },
         { sym: 'Pb', name: 'Lead',       Z: 82, color: '#475569', radius: 1.75, covalent: 1.46 },
-        { sym: 'Bi', name: 'Bismuth',    Z: 83, color: '#a855f7', radius: 1.56, covalent: 1.48 }
-      ];
+        { sym: 'Bi', name: 'Bismuth',    Z: 83, color: '#a855f7', radius: 1.56, covalent: 1.48 },
+        { sym: 'He', name: 'Helium',     Z: 2,  color: '#d8f3ff', radius: 0.31, covalent: 0.28 },
+        { sym: 'Ne', name: 'Neon',       Z: 10, color: '#b3e3f5', radius: 0.38, covalent: 0.58 },
+        { sym: 'Ar', name: 'Argon',      Z: 18, color: '#80d1e3', radius: 0.71, covalent: 1.06 },
+        { sym: 'Sc', name: 'Scandium',   Z: 21, color: '#e6e6e6', radius: 1.62, covalent: 1.70 },
+        { sym: 'Kr', name: 'Krypton',    Z: 36, color: '#5cb8d1', radius: 0.88, covalent: 1.16 },
+        { sym: 'Rb', name: 'Rubidium',   Z: 37, color: '#702eb0', radius: 2.48, covalent: 2.20 },
+        { sym: 'Y',  name: 'Yttrium',    Z: 39, color: '#94ffff', radius: 1.80, covalent: 1.90 },
+        { sym: 'Nb', name: 'Niobium',    Z: 41, color: '#73c2c9', radius: 1.46, covalent: 1.64 },
+        { sym: 'Tc', name: 'Technetium', Z: 43, color: '#3b9e9e', radius: 1.36, covalent: 1.47 },
+        { sym: 'Ru', name: 'Ruthenium',  Z: 44, color: '#248f8f', radius: 1.34, covalent: 1.46 },
+        { sym: 'Rh', name: 'Rhodium',    Z: 45, color: '#0a7d8c', radius: 1.34, covalent: 1.42 },
+        { sym: 'Pd', name: 'Palladium',  Z: 46, color: '#006985', radius: 1.37, covalent: 1.39 },
+        { sym: 'In', name: 'Indium',     Z: 49, color: '#a67573', radius: 1.67, covalent: 1.42 },
+        { sym: 'Sb', name: 'Antimony',   Z: 51, color: '#9e63b5', radius: 1.45, covalent: 1.39 },
+        { sym: 'Xe', name: 'Xenon',      Z: 54, color: '#429eb0', radius: 1.08, covalent: 1.40 },
+        { sym: 'Ce', name: 'Cerium',     Z: 58, color: '#ffffc7', radius: 1.82, covalent: 2.04 },
+        { sym: 'Pr', name: 'Praseodymium', Z: 59, color: '#d9ffc7', radius: 1.82, covalent: 2.03 },
+        { sym: 'Nd', name: 'Neodymium',  Z: 60, color: '#c7ffc7', radius: 1.81, covalent: 2.01 },
+        { sym: 'Pm', name: 'Promethium', Z: 61, color: '#a3ffc7', radius: 1.83, covalent: 1.99 },
+        { sym: 'Sm', name: 'Samarium',   Z: 62, color: '#8fffc7', radius: 1.80, covalent: 1.98 },
+        { sym: 'Eu', name: 'Europium',   Z: 63, color: '#61ffc7', radius: 1.80, covalent: 1.98 },
+        { sym: 'Gd', name: 'Gadolinium', Z: 64, color: '#45ffc7', radius: 1.80, covalent: 1.96 },
+        { sym: 'Tb', name: 'Terbium',    Z: 65, color: '#30ffc7', radius: 1.77, covalent: 1.94 },
+        { sym: 'Dy', name: 'Dysprosium', Z: 66, color: '#1fffc7', radius: 1.78, covalent: 1.92 },
+        { sym: 'Ho', name: 'Holmium',    Z: 67, color: '#00ff9c', radius: 1.76, covalent: 1.92 },
+        { sym: 'Er', name: 'Erbium',     Z: 68, color: '#00e675', radius: 1.76, covalent: 1.89 },
+        { sym: 'Tm', name: 'Thulium',    Z: 69, color: '#00d452', radius: 1.76, covalent: 1.90 },
+        { sym: 'Yb', name: 'Ytterbium',  Z: 70, color: '#00bf38', radius: 1.76, covalent: 1.87 },
+        { sym: 'Lu', name: 'Lutetium',   Z: 71, color: '#00ab24', radius: 1.74, covalent: 1.87 },
+        { sym: 'Hf', name: 'Hafnium',    Z: 72, color: '#4dc2ff', radius: 1.59, covalent: 1.75 },
+        { sym: 'Ta', name: 'Tantalum',   Z: 73, color: '#4da6ff', radius: 1.46, covalent: 1.70 },
+        { sym: 'Re', name: 'Rhenium',    Z: 75, color: '#267dab', radius: 1.37, covalent: 1.51 },
+        { sym: 'Os', name: 'Osmium',     Z: 76, color: '#266696', radius: 1.35, covalent: 1.44 },
+        { sym: 'Ir', name: 'Iridium',    Z: 77, color: '#175487', radius: 1.36, covalent: 1.41 },
+        { sym: 'Hg', name: 'Mercury',    Z: 80, color: '#b8b8d0', radius: 1.51, covalent: 1.32 },
+        { sym: 'Tl', name: 'Thallium',   Z: 81, color: '#a6544d', radius: 1.70, covalent: 1.45 },
+        { sym: 'Th', name: 'Thorium',    Z: 90, color: '#00baff', radius: 1.80, covalent: 2.06 },
+        { sym: 'U',  name: 'Uranium',    Z: 92, color: '#008fff', radius: 1.56, covalent: 1.96 }
+      ].sort((u, v) => u.Z - v.Z);
 
       const PERIODIC_BY_SYM = {};
       PERIODIC_ELEMENTS.forEach((e) => { PERIODIC_BY_SYM[e.sym] = e; });
@@ -2756,7 +2803,7 @@
       let cachedXRDKey = '';
       let cachedXRDResult = null;
       function computeXRDPattern(structure, lambda, fwhm) {
-        const key = structure.id + '|' + lambda.toFixed(4) + '|' + fwhm.toFixed(3);
+        const key = (structure._cacheKey || structure.id) + '|' + lambda.toFixed(4) + '|' + fwhm.toFixed(3);
         if (key === cachedXRDKey && cachedXRDResult) return cachedXRDResult;
 
         const recip = computeReciprocalVectors(structure.cell);
@@ -2766,10 +2813,11 @@
         const gMax = 2 * sMax;
         const gMaxSq = (gMax + 1e-5) * (gMax + 1e-5);
 
-        // High-index cap raised to 20 so large cells (e.g. Spinel + Mo Ka1) capture high-order reflections
-        const hMax = Math.min(20, Math.ceil(gMax / Math.max(0.05, recip.lenA)) + 1);
-        const kMax = Math.min(20, Math.ceil(gMax / Math.max(0.05, recip.lenB)) + 1);
-        const lMax = Math.min(20, Math.ceil(gMax / Math.max(0.05, recip.lenC)) + 1);
+        // Adaptive index cap: 20 for normal cells (Spinel + Mo Ka1), scaled down for giant (>100-atom) imported CIFs
+        const idxCap = structure.basis.length > 160 ? 10 : (structure.basis.length > 90 ? 14 : 20);
+        const hMax = Math.min(idxCap, Math.ceil(gMax / Math.max(0.05, recip.lenA)) + 1);
+        const kMax = Math.min(idxCap, Math.ceil(gMax / Math.max(0.05, recip.lenB)) + 1);
+        const lMax = Math.min(idxCap, Math.ceil(gMax / Math.max(0.05, recip.lenC)) + 1);
 
         const allowedBins = new Map();
         const forbiddenBins = new Map();
@@ -2954,7 +3002,624 @@
         return cachedXRDResult;
       }
 
+      // =========================================================================
+      // MODULE: UNIVERSAL .CIF PARSER & EXPORTER (P1 + SYMMETRY EXPANSION)
+      // =========================================================================
+      function downloadTextFile(filename, content, mimeType) {
+        const blob = new Blob([content], { type: mimeType || 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function parseCifNumber(raw) {
+        if (raw === undefined || raw === null) return NaN;
+        const s = String(raw).trim();
+        if (!s || s === '.' || s === '?') return NaN;
+        const cleaned = s.replace(/\([^)]*\)/g, '').trim();
+        if (/^[+-]?\d+(?:\.\d+)?\s*\/\s*[+-]?\d+(?:\.\d+)?$/.test(cleaned)) {
+          const parts = cleaned.split('/');
+          const num = parseFloat(parts[0]);
+          const den = parseFloat(parts[1]);
+          return (Number.isFinite(num) && Number.isFinite(den) && Math.abs(den) > 1e-9) ? (num / den) : NaN;
+        }
+        const v = parseFloat(cleaned);
+        return Number.isFinite(v) ? v : NaN;
+      }
+
+      function wrapFrac01(v) {
+        let r = ((v % 1) + 1) % 1;
+        if (r > 0.9994 || r < 0.0006) r = 0;
+        return r;
+      }
+
+      function formatFracNice(v) {
+        const w = wrapFrac01(v);
+        const niceList = [
+          [0, '0'], [0.5, '1/2'], [0.25, '1/4'], [0.75, '3/4'],
+          [1 / 3, '1/3'], [2 / 3, '2/3'], [1 / 6, '1/6'], [5 / 6, '5/6'],
+          [1 / 8, '1/8'], [3 / 8, '3/8'], [5 / 8, '5/8'], [7 / 8, '7/8']
+        ];
+        for (let i = 0; i < niceList.length; i++) {
+          if (Math.abs(w - niceList[i][0]) < 1e-3) return niceList[i][1];
+        }
+        return String(parseFloat(w.toFixed(4)));
+      }
+
+      function cleanCifElementSymbol(typeSym, label) {
+        const tryRaw = (raw) => {
+          if (!raw) return null;
+          let s = String(raw).trim();
+          if (!s || s === '.' || s === '?') return null;
+          // Strip quotes, charge signs, digits, underscores, brackets
+          s = s.replace(/['"]/g, '').replace(/[0-9+-]+.*$/, '').replace(/[^A-Za-z]/g, '');
+          if (!s) {
+            const m = String(raw).match(/[A-Za-z]{1,2}/);
+            s = m ? m[0] : '';
+          }
+          if (!s) return null;
+          const trySym = (cand) => {
+            const low = cand.toLowerCase();
+            const hit = PERIODIC_ELEMENTS.find((e) => e.sym.toLowerCase() === low);
+            return hit ? hit.sym : null;
+          };
+          if (s.length >= 2) {
+            const two = trySym(s.slice(0, 2));
+            if (two) return two;
+          }
+          return trySym(s.slice(0, 1));
+        };
+        return tryRaw(typeSym) || tryRaw(label) || null;
+      }
+
+      function tokenizeCIF(text) {
+        const srcText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const n = srcText.length;
+        const tokens = [];
+        let i = 0;
+        let atLineStart = true;
+
+        while (i < n) {
+          const ch = srcText[i];
+
+          // Multiline semicolon text field starting at column 0
+          if (atLineStart && ch === ';') {
+            let j = i + 1;
+            let body = '';
+            while (j < n) {
+              if (srcText[j] === '\n' && j + 1 < n && srcText[j + 1] === ';') {
+                j += 2;
+                break;
+              }
+              body += srcText[j];
+              j++;
+            }
+            tokens.push({ type: 'str', val: body.trim() });
+            i = j;
+            atLineStart = false;
+            continue;
+          }
+
+          if (ch === '\n') {
+            i++;
+            atLineStart = true;
+            continue;
+          }
+          if (ch === ' ' || ch === '\t' || ch === '\f' || ch === '\v') {
+            i++;
+            continue;
+          }
+          if (ch === '#') {
+            while (i < n && srcText[i] !== '\n') i++;
+            continue;
+          }
+
+          atLineStart = false;
+
+          // Single or double quoted string (CIF spec: closing quote followed by whitespace/EOF)
+          if (ch === "'" || ch === '"') {
+            const quote = ch;
+            i++;
+            let val = '';
+            while (i < n) {
+              if (srcText[i] === quote && (i + 1 >= n || /\s/.test(srcText[i + 1]))) {
+                i++;
+                break;
+              }
+              val += srcText[i];
+              i++;
+            }
+            tokens.push({ type: 'str', val: val });
+            continue;
+          }
+
+          // Bare token
+          let start = i;
+          while (i < n && !/\s/.test(srcText[i])) i++;
+          const tok = srcText.slice(start, i);
+          const low = tok.toLowerCase();
+          if (low === 'loop_') {
+            tokens.push({ type: 'loop', val: 'loop_' });
+          } else if (low.indexOf('data_') === 0) {
+            tokens.push({ type: 'data', val: tok.slice(5) });
+          } else if (low === 'global_' || low.indexOf('save_') === 0 || low === 'stop_') {
+            tokens.push({ type: 'ctrl', val: low });
+          } else if (tok[0] === '_') {
+            tokens.push({ type: 'tag', val: low });
+          } else {
+            tokens.push({ type: 'val', val: tok });
+          }
+        }
+        return tokens;
+      }
+
+      function parseLinearSymExpr(raw) {
+        const s = String(raw || '').toLowerCase().replace(/\s+/g, '');
+        if (!s) return null;
+        const terms = s.match(/[+-]?[^+-]+/g);
+        if (!terms || terms.length === 0) return null;
+        let cx = 0, cy = 0, cz = 0, c0 = 0;
+        for (let i = 0; i < terms.length; i++) {
+          let t = terms[i];
+          let sign = 1;
+          if (t[0] === '+') t = t.slice(1);
+          else if (t[0] === '-') { sign = -1; t = t.slice(1); }
+          if (!t) continue;
+          const varMatch = t.match(/([xyz])$/);
+          let varName = null;
+          let coeffStr = t;
+          if (varMatch) {
+            varName = varMatch[1];
+            coeffStr = t.slice(0, -1).replace(/\*$/, '');
+          }
+          let coeff = 1;
+          if (coeffStr.length > 0) {
+            if (coeffStr.indexOf('/') >= 0) {
+              const parts = coeffStr.split('/');
+              const num = parseFloat(parts[0]);
+              const den = parseFloat(parts[1]);
+              if (!Number.isFinite(num) || !Number.isFinite(den) || Math.abs(den) < 1e-9) return null;
+              coeff = num / den;
+            } else {
+              coeff = parseFloat(coeffStr);
+              if (!Number.isFinite(coeff)) return null;
+            }
+          }
+          const val = sign * coeff;
+          if (varName === 'x') cx += val;
+          else if (varName === 'y') cy += val;
+          else if (varName === 'z') cz += val;
+          else c0 += val;
+        }
+        return { cx: cx, cy: cy, cz: cz, c0: c0 };
+      }
+
+      function parseSymOpTriple(opStr) {
+        const parts = String(opStr || '').split(',');
+        if (parts.length !== 3) return null;
+        const ex = parseLinearSymExpr(parts[0]);
+        const ey = parseLinearSymExpr(parts[1]);
+        const ez = parseLinearSymExpr(parts[2]);
+        if (!ex || !ey || !ez) return null;
+        return [ex, ey, ez];
+      }
+
+      function inferCrystalSystemFromCell(cell) {
+        const eq = (u, v, tol) => Math.abs(u - v) <= tol;
+        const a = cell.a, b = cell.b, c = cell.c;
+        const al = cell.alpha, be = cell.beta, ga = cell.gamma;
+        if (eq(al, 90, 0.25) && eq(be, 90, 0.25) && eq(ga, 90, 0.25)) {
+          if (eq(a, b, 0.015) && eq(b, c, 0.015)) return 'Cubic';
+          if (eq(a, b, 0.015)) return 'Tetragonal';
+          return 'Orthorhombic';
+        }
+        if (eq(al, 90, 0.25) && eq(be, 90, 0.25) && eq(ga, 120, 0.35) && eq(a, b, 0.015)) {
+          return 'Hexagonal';
+        }
+        if (eq(a, b, 0.015) && eq(b, c, 0.015) && eq(al, be, 0.35) && eq(be, ga, 0.35) && al < 119.5) {
+          return 'Trigonal';
+        }
+        if (eq(al, 90, 0.25) && eq(ga, 90, 0.25) && be >= 45 && be <= 135) {
+          return 'Monoclinic';
+        }
+        return 'Triclinic';
+      }
+
+      function computeFormulaFromBasis(basis) {
+        if (!basis || basis.length === 0) return 'Custom';
+        const counts = {};
+        basis.forEach((b) => { counts[b.el] = (counts[b.el] || 0) + 1; });
+        const els = Object.keys(counts);
+        let g = 0;
+        els.forEach((el) => { g = g === 0 ? counts[el] : gcd2(g, counts[el]); });
+        const div = g > 1 ? g : 1;
+        return els.map((el) => {
+          const cnt = Math.round(counts[el] / div);
+          return el + (cnt > 1 ? String(cnt) : '');
+        }).join('');
+      }
+
+      function parseCIFText(text, filename) {
+        const tokens = tokenizeCIF(text);
+        if (tokens.length === 0) throw new Error('Empty CIF file');
+
+        const blocks = [];
+        let curBlock = { name: '', tags: {}, loops: [] };
+        const pushBlock = () => {
+          if (Object.keys(curBlock.tags).length > 0 || curBlock.loops.length > 0) {
+            blocks.push(curBlock);
+          }
+        };
+
+        let i = 0;
+        while (i < tokens.length) {
+          const tk = tokens[i];
+          if (tk.type === 'data') {
+            pushBlock();
+            curBlock = { name: tk.val, tags: {}, loops: [] };
+            i++;
+          } else if (tk.type === 'loop') {
+            i++;
+            const headers = [];
+            while (i < tokens.length && tokens[i].type === 'tag') {
+              headers.push(tokens[i].val);
+              i++;
+            }
+            const vals = [];
+            while (i < tokens.length && (tokens[i].type === 'val' || tokens[i].type === 'str')) {
+              vals.push(tokens[i].val);
+              i++;
+            }
+            if (headers.length > 0 && vals.length >= headers.length) {
+              const rows = [];
+              const nCols = headers.length;
+              for (let r = 0; r + nCols <= vals.length; r += nCols) {
+                rows.push(vals.slice(r, r + nCols));
+              }
+              curBlock.loops.push({ headers: headers, rows: rows });
+            }
+          } else if (tk.type === 'tag') {
+            if (i + 1 < tokens.length && (tokens[i + 1].type === 'val' || tokens[i + 1].type === 'str')) {
+              curBlock.tags[tk.val] = tokens[i + 1].val;
+              i += 2;
+            } else {
+              i++;
+            }
+          } else {
+            i++;
+          }
+        }
+        pushBlock();
+
+        // Pick first block that contains cell lengths + atom sites
+        let chosen = null;
+        let atomLoop = null;
+        for (let b = 0; b < blocks.length; b++) {
+          const blk = blocks[b];
+          const aVal = parseCifNumber(blk.tags['_cell_length_a']);
+          const aLoop = blk.loops.find((lp) =>
+            lp.headers.includes('_atom_site_fract_x') &&
+            lp.headers.includes('_atom_site_fract_y') &&
+            lp.headers.includes('_atom_site_fract_z')
+          );
+          if (Number.isFinite(aVal) && aLoop) {
+            chosen = blk;
+            atomLoop = aLoop;
+            break;
+          }
+        }
+        if (!chosen || !atomLoop) {
+          throw new Error('Missing _cell_length_* or _atom_site_fract_* data in CIF');
+        }
+
+        const cell = {
+          a: parseCifNumber(chosen.tags['_cell_length_a']),
+          b: parseCifNumber(chosen.tags['_cell_length_b']),
+          c: parseCifNumber(chosen.tags['_cell_length_c']),
+          alpha: parseCifNumber(chosen.tags['_cell_angle_alpha']),
+          beta: parseCifNumber(chosen.tags['_cell_angle_beta']),
+          gamma: parseCifNumber(chosen.tags['_cell_angle_gamma'])
+        };
+        if (!Number.isFinite(cell.b)) cell.b = cell.a;
+        if (!Number.isFinite(cell.c)) cell.c = cell.a;
+        if (!Number.isFinite(cell.alpha)) cell.alpha = 90;
+        if (!Number.isFinite(cell.beta)) cell.beta = 90;
+        if (!Number.isFinite(cell.gamma)) cell.gamma = 90;
+
+        if (!(cell.a > 0.5 && cell.b > 0.5 && cell.c > 0.5)) {
+          throw new Error('Invalid unit cell lengths in CIF');
+        }
+        if (!checkCellAnglesValid(cell.alpha, cell.beta, cell.gamma).valid) {
+          throw new Error('Invalid unit cell angles in CIF');
+        }
+
+        // Parse symmetry operations if present
+        const symOps = [];
+        chosen.loops.forEach((lp) => {
+          let colIdx = lp.headers.indexOf('_space_group_symop_operation_xyz');
+          if (colIdx < 0) colIdx = lp.headers.indexOf('_symmetry_equiv_pos_as_xyz');
+          if (colIdx >= 0) {
+            lp.rows.forEach((row) => {
+              const parsedOp = parseSymOpTriple(row[colIdx]);
+              if (parsedOp) symOps.push(parsedOp);
+            });
+          }
+        });
+        if (symOps.length === 0) {
+          const singleOp = chosen.tags['_space_group_symop_operation_xyz'] || chosen.tags['_symmetry_equiv_pos_as_xyz'];
+          const pSingle = singleOp ? parseSymOpTriple(singleOp) : null;
+          symOps.push(pSingle || parseSymOpTriple('x, y, z'));
+        }
+
+        // Parse asymmetric atom sites
+        const ixCol = atomLoop.headers.indexOf('_atom_site_fract_x');
+        const iyCol = atomLoop.headers.indexOf('_atom_site_fract_y');
+        const izCol = atomLoop.headers.indexOf('_atom_site_fract_z');
+        const symCol = atomLoop.headers.indexOf('_atom_site_type_symbol');
+        const lblCol = atomLoop.headers.indexOf('_atom_site_label');
+        const occCol = atomLoop.headers.indexOf('_atom_site_occupancy');
+
+        const rawSites = [];
+        let fallbackCount = 0;
+        atomLoop.rows.forEach((row) => {
+          const fx = parseCifNumber(row[ixCol]);
+          const fy = parseCifNumber(row[iyCol]);
+          const fz = parseCifNumber(row[izCol]);
+          if (!Number.isFinite(fx) || !Number.isFinite(fy) || !Number.isFinite(fz)) return;
+          if (occCol >= 0) {
+            const occ = parseCifNumber(row[occCol]);
+            if (Number.isFinite(occ) && occ <= 1e-4) return;
+          }
+          let el = cleanCifElementSymbol(symCol >= 0 ? row[symCol] : '', lblCol >= 0 ? row[lblCol] : '');
+          if (!el) {
+            fallbackCount += 1;
+            el = 'C';
+          }
+          rawSites.push({ el: el, f: [fx, fy, fz] });
+        });
+
+        if (rawSites.length === 0) {
+          throw new Error('No valid fractional atom coordinates found in CIF');
+        }
+
+        // Expand symmetry operations & deduplicate via periodic minimum-image Cartesian distance
+        const vecs = getLatticeVectors(cell);
+        const expanded = [];
+        const dedupDistSq = 0.08 * 0.08;
+
+        for (let sIdx = 0; sIdx < rawSites.length; sIdx++) {
+          const st = rawSites[sIdx];
+          for (let oIdx = 0; oIdx < symOps.length; oIdx++) {
+            const op = symOps[oIdx];
+            const nx = wrapFrac01(op[0].cx * st.f[0] + op[0].cy * st.f[1] + op[0].cz * st.f[2] + op[0].c0);
+            const ny = wrapFrac01(op[1].cx * st.f[0] + op[1].cy * st.f[1] + op[1].cz * st.f[2] + op[1].c0);
+            const nz = wrapFrac01(op[2].cx * st.f[0] + op[2].cy * st.f[1] + op[2].cz * st.f[2] + op[2].c0);
+
+            let dup = false;
+            for (let k = 0; k < expanded.length; k++) {
+              const ex = expanded[k];
+              let dx = nx - ex.f[0]; dx -= Math.round(dx);
+              let dy = ny - ex.f[1]; dy -= Math.round(dy);
+              let dz = nz - ex.f[2]; dz -= Math.round(dz);
+              const dc = fracToCart(dx, dy, dz, vecs);
+              if (dc[0] * dc[0] + dc[1] * dc[1] + dc[2] * dc[2] < dedupDistSq) {
+                dup = true;
+                break;
+              }
+            }
+            if (!dup) {
+              expanded.push({ el: st.el, f: [nx, ny, nz] });
+              if (expanded.length >= 600) break;
+            }
+          }
+          if (expanded.length >= 600) break;
+        }
+
+        const baseFileName = String(filename || '').replace(/\.cif$/i, '').replace(/[_-]+/g, ' ').trim();
+        const rawFormula = (chosen.tags['_chemical_formula_sum'] || '').replace(/\s+/g, ' ').trim();
+        const formula = rawFormula ? rawFormula.replace(/\s+/g, '') : computeFormulaFromBasis(expanded);
+        const rawName = chosen.tags['_chemical_name_mineral'] ||
+          chosen.tags['_chemical_name_common'] ||
+          (chosen.name && chosen.name.toLowerCase() !== 'global' ? chosen.name : '') ||
+          baseFileName ||
+          formula ||
+          'Imported CIF';
+        const name = String(rawName).replace(/[_]+/g, ' ').trim().slice(0, 60);
+        const spaceGroup = String(
+          chosen.tags['_space_group_name_h-m_alt'] ||
+          chosen.tags['_symmetry_space_group_name_h-m'] ||
+          chosen.tags['_space_group_name_hall'] ||
+          'P 1'
+        ).trim();
+        const system = inferCrystalSystemFromCell(cell);
+
+        return {
+          name: name,
+          formula: formula,
+          system: system,
+          spaceGroup: spaceGroup,
+          cell: cell,
+          basis: expanded,
+          basisStrings: expanded.map((b) => ({
+            el: b.el,
+            fx: formatFracNice(b.f[0]),
+            fy: formatFracNice(b.f[1]),
+            fz: formatFracNice(b.f[2])
+          })),
+          symOpCount: symOps.length,
+          fallbackCount: fallbackCount
+        };
+      }
+
+      function serializeCrystalToCIF(structure) {
+        const cell = structure.cell;
+        const vecs = getLatticeVectors(cell);
+        const safeDataName = (String(structure.name || 'ATOMICA_Crystal').replace(/[^A-Za-z0-9_]/g, '_') || 'ATOMICA_Crystal').slice(0, 48);
+
+        // Deduplicate unit-cell fractional sites in [0, 1)
+        const sites = [];
+        const dedupSq = 0.05 * 0.05;
+        (structure.basis || []).forEach((b) => {
+          const fx = wrapFrac01(b.f ? b.f[0] : parseFracInput(b.fx));
+          const fy = wrapFrac01(b.f ? b.f[1] : parseFracInput(b.fy));
+          const fz = wrapFrac01(b.f ? b.f[2] : parseFracInput(b.fz));
+          let dup = false;
+          for (let k = 0; k < sites.length; k++) {
+            let dx = fx - sites[k].f[0]; dx -= Math.round(dx);
+            let dy = fy - sites[k].f[1]; dy -= Math.round(dy);
+            let dz = fz - sites[k].f[2]; dz -= Math.round(dz);
+            const dc = fracToCart(dx, dy, dz, vecs);
+            if (dc[0] * dc[0] + dc[1] * dc[1] + dc[2] * dc[2] < dedupSq) { dup = true; break; }
+          }
+          if (!dup) sites.push({ el: b.el, f: [fx, fy, fz] });
+        });
+
+        const formula = structure.formula || computeFormulaFromBasis(sites);
+        const elCounters = {};
+        const atomLines = sites.map((s) => {
+          elCounters[s.el] = (elCounters[s.el] || 0) + 1;
+          const lbl = s.el + elCounters[s.el];
+          return '  ' +
+            lbl.padEnd(8, ' ') +
+            s.el.padEnd(5, ' ') +
+            s.f[0].toFixed(6).padStart(10, ' ') + ' ' +
+            s.f[1].toFixed(6).padStart(10, ' ') + ' ' +
+            s.f[2].toFixed(6).padStart(10, ' ') + '  1.0000';
+        });
+
+        const origSgNote = structure.spaceGroup ? ('# Original Space Group / Setting: ' + structure.spaceGroup + '\n') : '';
+        return (
+          'data_' + safeDataName + '\n' +
+          '# Generated by ATOMICA 3D Crystallography Visualizer\n' +
+          origSgNote +
+          "_audit_creation_method   'ATOMICA 3D Crystallography Visualizer'\n" +
+          "_chemical_name_common    '" + String(structure.name || safeDataName).replace(/'/g, '') + "'\n" +
+          "_chemical_formula_sum    '" + String(formula).replace(/'/g, '') + "'\n" +
+          '_cell_length_a           ' + Number(cell.a).toFixed(5) + '\n' +
+          '_cell_length_b           ' + Number(cell.b).toFixed(5) + '\n' +
+          '_cell_length_c           ' + Number(cell.c).toFixed(5) + '\n' +
+          '_cell_angle_alpha        ' + Number(cell.alpha).toFixed(3) + '\n' +
+          '_cell_angle_beta         ' + Number(cell.beta).toFixed(3) + '\n' +
+          '_cell_angle_gamma        ' + Number(cell.gamma).toFixed(3) + '\n' +
+          "_symmetry_space_group_name_H-M   'P 1'\n" +
+          '_symmetry_Int_Tables_number      1\n' +
+          'loop_\n' +
+          '  _space_group_symop_operation_xyz\n' +
+          "  'x, y, z'\n" +
+          'loop_\n' +
+          '  _atom_site_label\n' +
+          '  _atom_site_type_symbol\n' +
+          '  _atom_site_fract_x\n' +
+          '  _atom_site_fract_y\n' +
+          '  _atom_site_fract_z\n' +
+          '  _atom_site_occupancy\n' +
+          atomLines.join('\n') + '\n'
+        );
+      }
+
+      function getCustomCrystalAsStructure() {
+        const cc = state.customCrystal;
+        enforceCrystalSystemConstraints(cc);
+        const shifts = CENTERING_SHIFTS[cc.centering] || CENTERING_SHIFTS.P;
+        const vecs = getLatticeVectors(cc.cell);
+        const basis = [];
+        const dedupSq = 0.05 * 0.05;
+
+        cc.basis.forEach((b) => {
+          const bx = wrapFrac01(parseFracInput(b.fx));
+          const by = wrapFrac01(parseFracInput(b.fy));
+          const bz = wrapFrac01(parseFracInput(b.fz));
+          shifts.forEach((sh) => {
+            const fx = wrapFrac01(bx + sh[0]);
+            const fy = wrapFrac01(by + sh[1]);
+            const fz = wrapFrac01(bz + sh[2]);
+            let dup = false;
+            for (let k = 0; k < basis.length; k++) {
+              let dx = fx - basis[k].f[0]; dx -= Math.round(dx);
+              let dy = fy - basis[k].f[1]; dy -= Math.round(dy);
+              let dz = fz - basis[k].f[2]; dz -= Math.round(dz);
+              const dc = fracToCart(dx, dy, dz, vecs);
+              if (dc[0] * dc[0] + dc[1] * dc[1] + dc[2] * dc[2] < dedupSq) { dup = true; break; }
+            }
+            if (!dup) basis.push({ el: b.el, f: [fx, fy, fz] });
+          });
+        });
+
+        const formula = computeFormulaFromBasis(basis);
+        const sig = [
+          cc.system, cc.centering,
+          cc.cell.a.toFixed(4), cc.cell.b.toFixed(4), cc.cell.c.toFixed(4),
+          cc.cell.alpha.toFixed(2), cc.cell.beta.toFixed(2), cc.cell.gamma.toFixed(2),
+          basis.map((x) => x.el + ':' + x.f.map((v) => v.toFixed(4)).join(',')).join(';')
+        ].join('|');
+
+        return {
+          id: 'my_crystal_active',
+          _cacheKey: 'my_crystal_active|' + sig,
+          name: cc.name || 'My Crystal',
+          formula: formula,
+          system: cc.system,
+          spaceGroup: cc.system + ' (' + cc.centering + ')',
+          cell: Object.assign({}, cc.cell),
+          basis: basis,
+          isCustomLive: true
+        };
+      }
+
+      function registerImportedCif(parsed) {
+        const existingIdx = state.importedCifs.findIndex((c) => c.name === parsed.name);
+        const id = existingIdx >= 0
+          ? state.importedCifs[existingIdx].id
+          : ('cif-' + Date.now() + '-' + Math.floor(Math.random() * 1000));
+        const entry = {
+          id: id,
+          _cacheKey: id + '|' + Date.now(),
+          name: parsed.name,
+          formula: parsed.formula,
+          system: parsed.system,
+          spaceGroup: parsed.spaceGroup,
+          cell: Object.assign({}, parsed.cell),
+          basis: parsed.basis.map((b) => ({ el: b.el, f: b.f.slice() })),
+          basisStrings: parsed.basisStrings.map((b) => Object.assign({}, b)),
+          isImportedCif: true
+        };
+        if (existingIdx >= 0) state.importedCifs[existingIdx] = entry;
+        else state.importedCifs.unshift(entry);
+        return entry;
+      }
+
+      function loadStructureIntoMyCrystal(stObj) {
+        const cc = state.customCrystal;
+        cc.name = stObj.name || 'Imported CIF';
+        cc.system = VALID_BRAVAIS_CENTERINGS[stObj.system] ? stObj.system : inferCrystalSystemFromCell(stObj.cell);
+        cc.centering = 'P';
+        cc.cell = Object.assign({}, stObj.cell);
+        cc.basis = stObj.basisStrings
+          ? stObj.basisStrings.map((b) => Object.assign({}, b))
+          : stObj.basis.map((b) => ({
+              el: b.el,
+              fx: formatFracNice(b.f[0]),
+              fy: formatFracNice(b.f[1]),
+              fz: formatFracNice(b.f[2])
+            }));
+        cc.latticeOnly = false;
+        cc.supercell = '1';
+        cc.removedParts = [];
+        cc.validationError = '';
+        enforceCrystalSystemConstraints(cc, true);
+      }
+
       function getRecipCrystal() {
+        if (state.recipCrystalId === 'my_crystal_active') {
+          return getCustomCrystalAsStructure();
+        }
+        const cifHit = state.importedCifs.find((c) => c.id === state.recipCrystalId);
+        if (cifHit) return cifHit;
         return CRYSTAL_DB.find((c) => c.id === state.recipCrystalId) || CRYSTAL_DB[1];
       }
 
@@ -3560,9 +4225,33 @@
         const sinThetaSel = Number.isFinite(selPt.dHkl) ? state.braggLambda / (2 * selPt.dHkl) : 99;
         const twoThetaSel = sinThetaSel <= 1 ? ((2 * Math.asin(sinThetaSel) * 180) / Math.PI).toFixed(2) + '°' : 'N/A (>180°)';
 
-        const optionsHtml = CRYSTAL_DB.map((item, idx) =>
-          '<option value="' + item.id + '"' + (item.id === state.recipCrystalId ? ' selected' : '') + '>' + (idx + 1) + '. ' + item.name + '</option>'
+        const mcLiveName = state.customCrystal.name || 'My Crystal';
+        const builtInOpts = CRYSTAL_DB.map((item, idx) =>
+          '<option value="' + item.id + '"' + (item.id === state.recipCrystalId ? ' selected' : '') + '>' + (idx + 1) + '. ' + esc(item.name) + '</option>'
         ).join('');
+        const customOpts =
+          '<option value="my_crystal_active"' + (state.recipCrystalId === 'my_crystal_active' ? ' selected' : '') + '>My Crystal: ' + esc(mcLiveName) + '</option>' +
+          state.importedCifs.map((item) =>
+            '<option value="' + item.id + '"' + (item.id === state.recipCrystalId ? ' selected' : '') + '>CIF: ' + esc(item.name) + ' (' + esc(item.formula) + ')</option>'
+          ).join('');
+        const optionsHtml =
+          '<optgroup label="Built-in Structures (15)">' + builtInOpts + '</optgroup>' +
+          '<optgroup label="My Crystal &amp; Imported CIFs">' + customOpts + '</optgroup>';
+
+        const activeSourceStrip = crystal.isImportedCif
+          ? '<div class="flex items-center justify-between gap-1.5 bg-emerald-500/10 border border-emerald-500/35 rounded-lg px-2 py-1.5 text-[10.5px]">' +
+              '<div class="truncate text-emerald-200"><span class="font-semibold">CIF</span> &bull; <span class="font-mono">' + esc(crystal.spaceGroup || 'P 1') + '</span> &bull; ' + crystal.basis.length + ' sites</div>' +
+              '<div class="flex items-center gap-1 shrink-0">' +
+                '<button type="button" id="btn-recip-open-mc" class="px-1.5 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/50 text-[10px] text-sky-200 font-medium" title="Open in My Crystal 3D editor">Edit 3D</button>' +
+                '<button type="button" id="btn-recip-del-cif" class="px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/30 border border-rose-400/40 text-[10px] text-rose-300 font-bold" title="Remove imported CIF">&times;</button>' +
+              '</div>' +
+            '</div>'
+          : crystal.isCustomLive
+          ? '<div class="bg-sky-500/10 border border-sky-500/30 rounded-lg px-2 py-1 text-[10.5px] text-sky-200 flex items-center justify-between">' +
+              '<span>Live synced with <strong class="text-sky-100">My Crystal</strong></span>' +
+              '<span class="font-mono text-sky-300">' + crystal.basis.length + ' sites</span>' +
+            '</div>'
+          : '';
 
         const subTabs = [
           { id: 'lattice', label: '3D Lattice' },
@@ -3700,9 +4389,15 @@
                 '">' + st.label + '</button>'
               ).join('') +
             '</div>' +
-            '<div class="space-y-1 pt-1">' +
+            '<div class="space-y-1.5 pt-1">' +
               '<label for="recip-crystal-select" class="text-[11px] font-medium text-slate-400">Crystal Structure</label>' +
               '<select id="recip-crystal-select" class="w-full bg-slate-900 border border-slate-700/90 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-400">' + optionsHtml + '</select>' +
+              '<div class="grid grid-cols-2 gap-1.5">' +
+                '<button type="button" id="btn-recip-import-cif" class="py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 transition-colors">Import .CIF</button>' +
+                '<button type="button" id="btn-recip-export-cif" class="py-1.5 rounded-lg text-[11px] font-semibold bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/50 text-sky-200 transition-colors">Export .CIF</button>' +
+                '<input id="recip-import-cif-file" type="file" accept=".cif,text/plain" class="hidden" />' +
+              '</div>' +
+              activeSourceStrip +
             '</div>' +
           '</section>' +
           subBodyHtml;
@@ -3718,6 +4413,58 @@
           syncBraggDFromHKL();
           updateAll();
         });
+
+        const recipCifInp = document.getElementById('recip-import-cif-file');
+        document.getElementById('btn-recip-import-cif').addEventListener('click', () => recipCifInp.click());
+        recipCifInp.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          e.target.value = '';
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = parseCIFText(String(reader.result || ''), file.name);
+              const entry = registerImportedCif(parsed);
+              state.recipCrystalId = entry.id;
+              syncBraggDFromHKL();
+              showToast('Imported CIF "' + entry.name + '" (' + entry.basis.length + ' sites, ' + entry.system + ')');
+              updateAll();
+            } catch (err) {
+              showToast('CIF import failed: ' + (err && err.message ? err.message : 'Invalid file'));
+            }
+          };
+          reader.readAsText(file);
+        });
+
+        document.getElementById('btn-recip-export-cif').addEventListener('click', () => {
+          const cur = getRecipCrystal();
+          const cifText = serializeCrystalToCIF(cur);
+          const safeName = (String(cur.name || 'crystal').replace(/[^a-z0-9_-]/gi, '_') || 'crystal') + '.cif';
+          downloadTextFile(safeName, cifText, 'chemical/x-cif;charset=utf-8');
+          showToast('Exported ' + safeName);
+        });
+
+        const btnRecipOpenMc = document.getElementById('btn-recip-open-mc');
+        if (btnRecipOpenMc) {
+          btnRecipOpenMc.addEventListener('click', () => {
+            const cur = getRecipCrystal();
+            loadStructureIntoMyCrystal(cur);
+            state.activeTab = 'mycrystal';
+            autoFrameCamera();
+            showToast('Opened "' + cur.name + '" in My Crystal');
+            updateAll();
+          });
+        }
+        const btnRecipDelCif = document.getElementById('btn-recip-del-cif');
+        if (btnRecipDelCif) {
+          btnRecipDelCif.addEventListener('click', () => {
+            state.importedCifs = state.importedCifs.filter((c) => c.id !== state.recipCrystalId);
+            state.recipCrystalId = 'fcc';
+            syncBraggDFromHKL();
+            showToast('Removed imported CIF');
+            updateAll();
+          });
+        }
 
         const clampR = (v) => { const n = parseInt(v, 10); return Number.isNaN(n) ? 0 : Math.max(-3, Math.min(3, n)); };
         ['h', 'k', 'l'].forEach((lbl) => {
@@ -5297,9 +6044,9 @@
           cc.centering = 'P';
         }
 
-        cell.a = Math.max(1.5, Math.min(20, Number(cell.a) || 4.0));
-        cell.b = Math.max(1.5, Math.min(20, Number(cell.b) || 4.0));
-        cell.c = Math.max(1.5, Math.min(20, Number(cell.c) || 4.0));
+        cell.a = Math.max(1.5, Math.min(50, Number(cell.a) || 4.0));
+        cell.b = Math.max(1.5, Math.min(50, Number(cell.b) || 4.0));
+        cell.c = Math.max(1.5, Math.min(50, Number(cell.c) || 4.0));
         cell.alpha = Math.max(30, Math.min(150, Number(cell.alpha) || 90));
         cell.beta  = Math.max(30, Math.min(150, Number(cell.beta)  || 90));
         cell.gamma = Math.max(30, Math.min(150, Number(cell.gamma) || 90));
@@ -5517,6 +6264,7 @@
       function buildMyCrystal3DScene() {
         const cc = state.customCrystal;
         const data = generateCustomCrystalData(cc);
+        const removedSet = new Set((cc.removedParts || []).map((p) => p.id));
 
         const verts = [];
         data.cellEdges.forEach((e) => verts.push(e[0].x, e[0].y, e[0].z, e[1].x, e[1].y, e[1].z));
@@ -5528,7 +6276,7 @@
 
         if (cc.latticeOnly) {
           data.latticePoints.forEach((lp, idx) => {
-            const m = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({
+            const m = new THREE.Mesh(sphereGeo.clone(), new THREE.MeshStandardMaterial({
               color: 0xf8fafc, emissive: 0x38bdf8, emissiveIntensity: 0.55, roughness: 0.2
             }));
             m.scale.setScalar(0.22);
@@ -5540,29 +6288,43 @@
             contentGroup.add(m);
             pickables.push(m);
           });
+          sphereGeo.dispose();
           return;
         }
 
         data.atoms.forEach((at) => {
+          const atomId = 'mc-atom-' + at.idx;
+          if (removedSet.has(atomId)) return;
           const pe = PERIODIC_BY_SYM[at.el] || { name: at.el, color: '#cbd5e1', radius: 1.2 };
           const r = Math.max(0.26, Math.min(0.62, pe.radius * 0.34));
-          const m = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({
+          const m = new THREE.Mesh(sphereGeo.clone(), new THREE.MeshStandardMaterial({
             color: pe.color, roughness: 0.28, metalness: 0.16
           }));
           m.scale.setScalar(r);
-          m.position.copy(at.posCentered);
+
+          const holder = new THREE.Group();
+          holder.position.copy(at.posCentered);
+          holder.add(m);
+          contentGroup.add(holder);
+
           m.userData = {
-            clickable: false,
-            tooltip: { title: pe.name + ' (' + at.el + ')', subtitle: 'Custom Basis Atom', frac: at.frac }
+            clickable: true,
+            partId: atomId,
+            partType: 'Atom',
+            partLabel: at.el + ' #' + (at.idx + 1) + ' (' + at.frac.map((v) => v.toFixed(2)).join(', ') + ')',
+            tooltip: { title: pe.name + ' (' + at.el + ')', subtitle: 'Custom Basis Atom • Click to hide atom', frac: at.frac }
           };
-          contentGroup.add(m);
           pickables.push(m);
+          partMeshes[atomId] = { obj: holder, targetPos: at.posCentered.clone() };
         });
+        sphereGeo.dispose();
 
         if (data.bonds.length > 0) {
           const cylGeo = new THREE.CylinderGeometry(0.075, 0.075, 1, 10);
           const upVec = new THREE.Vector3(0, 1, 0);
           data.bonds.forEach((b) => {
+            const bondId = 'mc-bond-' + b.aIdx + '-' + b.bIdx;
+            if (removedSet.has(bondId) || removedSet.has('mc-atom-' + b.aIdx) || removedSet.has('mc-atom-' + b.bIdx)) return;
             const aA = data.atoms[b.aIdx], aB = data.atoms[b.bIdx];
             const pA = aA.posCentered, pB = aB.posCentered;
             const dir = new THREE.Vector3().subVectors(pB, pA);
@@ -5573,18 +6335,39 @@
             const colA = (PERIODIC_BY_SYM[aA.el] && PERIODIC_BY_SYM[aA.el].color) || '#cbd5e1';
             const colB = (PERIODIC_BY_SYM[aB.el] && PERIODIC_BY_SYM[aB.el].color) || '#cbd5e1';
 
-            const mA = new THREE.Mesh(cylGeo, new THREE.MeshStandardMaterial({ color: colA, roughness: 0.4 }));
+            const holder = new THREE.Group();
+            holder.position.copy(mid);
+
+            const mA = new THREE.Mesh(cylGeo.clone(), new THREE.MeshStandardMaterial({ color: colA, roughness: 0.4 }));
             mA.scale.set(1, len * 0.5, 1);
             mA.quaternion.copy(quat);
-            mA.position.copy(mid).addScaledVector(dir, -0.25);
+            mA.position.copy(dir).multiplyScalar(-0.25);
 
-            const mB = new THREE.Mesh(cylGeo, new THREE.MeshStandardMaterial({ color: colB, roughness: 0.4 }));
+            const mB = new THREE.Mesh(cylGeo.clone(), new THREE.MeshStandardMaterial({ color: colB, roughness: 0.4 }));
             mB.scale.set(1, len * 0.5, 1);
             mB.quaternion.copy(quat);
-            mB.position.copy(mid).addScaledVector(dir, 0.25);
+            mB.position.copy(dir).multiplyScalar(0.25);
 
-            contentGroup.add(mA, mB);
+            const midFrac = [
+              (aA.frac[0] + aB.frac[0]) * 0.5,
+              (aA.frac[1] + aB.frac[1]) * 0.5,
+              (aA.frac[2] + aB.frac[2]) * 0.5
+            ];
+            const ud = {
+              clickable: true,
+              partId: bondId,
+              partType: 'Bond',
+              partLabel: aA.el + '–' + aB.el + ' (' + b.dist.toFixed(2) + ' Å)',
+              tooltip: { title: aA.el + '–' + aB.el + ' Bond', subtitle: 'Length: ' + b.dist.toFixed(3) + ' Å • Click to hide', frac: midFrac }
+            };
+            mA.userData = ud;
+            mB.userData = ud;
+            holder.add(mA, mB);
+            contentGroup.add(holder);
+            pickables.push(mA, mB);
+            partMeshes[bondId] = { obj: holder, targetPos: mid.clone() };
           });
+          cylGeo.dispose();
         }
       }
 
@@ -5638,6 +6421,18 @@
             '</div>'
           : '';
 
+        const mcRemovedList = cc.removedParts || [];
+        const mcRemovedHtml = mcRemovedList.length === 0
+          ? '<p class="text-[11px] text-slate-500 italic">Click any atom or bond in 3D to hide it.</p>'
+          : '<div class="max-h-32 overflow-y-auto space-y-1 pr-1">' +
+              mcRemovedList.map((p) =>
+                '<button type="button" data-mcrestore="' + p.id + '" class="mc-restore-part-btn w-full text-left px-2 py-1.5 rounded-md bg-slate-900 hover:bg-sky-500/20 border border-slate-800 hover:border-sky-500/40 text-[11px] flex items-center justify-between gap-2 transition-colors">' +
+                  '<span class="truncate text-slate-300 font-mono">' + esc(p.label) + '</span>' +
+                  '<span class="text-[10px] text-sky-400 shrink-0">Restore</span>' +
+                '</button>'
+              ).join('') +
+            '</div>';
+
         sb.innerHTML =
           '<div class="bg-sky-500/10 border border-sky-500/30 rounded-lg p-2.5 text-[11px] text-sky-200 leading-relaxed">You can design your own crystal by changing parameters, angles etc. Enjoy &#9996;&#65039;</div>' +
           '<div class="bg-indigo-500/10 border border-indigo-500/30 rounded-lg p-2 text-[11px] text-indigo-200 text-center font-medium">Crystal Structure = Space Lattice + Basis</div>' +
@@ -5657,7 +6452,7 @@
             '</div>' +
             '<div class="grid grid-cols-3 gap-1.5">' +
               ['a', 'b', 'c'].map((k) =>
-                '<div><label class="block text-[10px] font-mono text-slate-400 text-center">' + k + ' (Å)</label><input id="mc-cell-' + k + '" type="number" step="0.05" min="1.5" max="20" value="' + Number(cc.cell[k]).toFixed(2) + '" ' + (locks[k] ? 'disabled' : '') + ' class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1 text-center text-xs font-mono text-slate-100 disabled:opacity-45" /></div>'
+                '<div><label class="block text-[10px] font-mono text-slate-400 text-center">' + k + ' (Å)</label><input id="mc-cell-' + k + '" type="number" step="0.05" min="1.5" max="50" value="' + Number(cc.cell[k]).toFixed(2) + '" ' + (locks[k] ? 'disabled' : '') + ' class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1 text-center text-xs font-mono text-slate-100 disabled:opacity-45" /></div>'
               ).join('') +
             '</div>' +
             '<div class="grid grid-cols-3 gap-1.5">' +
@@ -5678,21 +6473,36 @@
             '</div>' +
           '</section>' +
           '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
-            '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">3. Supercell &amp; Persistence</div>' +
+            '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">3. Supercell &amp; Click-to-Hide</div>' +
             '<div class="grid grid-cols-3 gap-1">' +
               [{ k: '1', l: '1×1×1' }, { k: '4', l: '2×2×1' }, { k: '8', l: '2×2×2' }].map((sc) =>
                 '<button type="button" data-mcsc="' + sc.k + '" class="mc-sc-btn py-1 rounded-lg text-[11px] font-mono border ' + (cc.supercell === sc.k ? 'bg-sky-500/25 border-sky-400 text-sky-200 font-semibold' : 'bg-slate-900 border-slate-800 text-slate-400') + '">' + sc.l + '</button>'
               ).join('') +
             '</div>' +
             '<label class="flex items-center justify-between text-xs bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800 cursor-pointer"><span class="text-slate-300">Auto-Generate Bonds</span><input id="mc-show-bonds" type="checkbox" ' + (cc.showBonds ? 'checked' : '') + ' class="accent-sky-400" /></label>' +
-            '<div class="flex gap-1.5">' +
-              '<input id="mc-save-name" type="text" value="' + esc(cc.name) + '" placeholder="Structure name" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 select-text" />' +
-              '<button type="button" id="mc-save-btn" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white shrink-0">Save</button>' +
+            '<div class="pt-1 space-y-1.5">' +
+              '<div class="flex items-center justify-between"><div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Removed Parts (' + mcRemovedList.length + ')</div>' +
+              '<button type="button" id="mc-restore-all" ' + (mcRemovedList.length === 0 ? 'disabled' : '') + ' class="text-[11px] font-medium px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 disabled:opacity-35 disabled:cursor-not-allowed transition-colors">Restore All</button></div>' +
+              '<label class="flex items-center justify-between text-xs text-slate-300 bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800 cursor-pointer"><span>Rejoin with Animation</span><input id="mc-chk-rejoin-anim" type="checkbox" ' + (cc.animateRejoin ? 'checked' : '') + ' class="accent-sky-400" /></label>' +
+              mcRemovedHtml +
+            '</div>' +
+          '</section>' +
+          '<section class="space-y-2 pt-2 border-t border-slate-800/80">' +
+            '<div class="text-xs font-semibold uppercase tracking-wider text-slate-400">4. CIF &amp; JSON Import / Export</div>' +
+            '<div class="grid grid-cols-2 gap-1.5">' +
+              '<button type="button" id="mc-import-cif" class="py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 transition-colors">Import .CIF</button>' +
+              '<button type="button" id="mc-export-cif" class="py-1.5 rounded-lg text-[11px] font-semibold bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/50 text-sky-200 transition-colors">Export .CIF</button>' +
+              '<input id="mc-import-cif-file" type="file" accept=".cif,text/plain" class="hidden" />' +
             '</div>' +
             '<div class="grid grid-cols-2 gap-1.5">' +
-              '<button type="button" id="mc-export-json" class="py-1.5 rounded-lg text-[11px] font-medium bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200">Export JSON</button>' +
               '<button type="button" id="mc-import-json" class="py-1.5 rounded-lg text-[11px] font-medium bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200">Import JSON</button>' +
+              '<button type="button" id="mc-export-json" class="py-1.5 rounded-lg text-[11px] font-medium bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200">Export JSON</button>' +
               '<input id="mc-import-file" type="file" accept=".json,application/json" class="hidden" />' +
+            '</div>' +
+            '<button type="button" id="mc-send-reciprocal" class="w-full py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/50 text-indigo-200 transition-colors">Analyze in Reciprocal / XRD &rarr;</button>' +
+            '<div class="flex gap-1.5 pt-1">' +
+              '<input id="mc-save-name" type="text" value="' + esc(cc.name) + '" placeholder="Structure name" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 select-text" />' +
+              '<button type="button" id="mc-save-btn" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white shrink-0">Save</button>' +
             '</div>' +
             '<div class="space-y-1 pt-1"><div class="text-[10px] uppercase text-slate-400 font-semibold">Saved Locally (' + savedList.length + ')</div>' + savedHtml + '</div>' +
           '</section>';
@@ -5706,6 +6516,7 @@
           cc.cell = Object.assign({}, p.cell);
           cc.basis = p.basis.map((b) => Object.assign({}, b));
           cc.latticeOnly = false;
+          cc.removedParts = [];
           cc.validationError = '';
           autoFrameCamera();
           showToast('Loaded preset: ' + p.name);
@@ -5713,11 +6524,13 @@
         });
         document.getElementById('mc-system').addEventListener('change', (e) => {
           cc.system = e.target.value;
+          cc.removedParts = [];
           enforceCrystalSystemConstraints(cc, true);
           updateAll();
         });
         document.getElementById('mc-centering').addEventListener('change', (e) => {
           cc.centering = e.target.value;
+          cc.removedParts = [];
           updateAll();
         });
         ['a', 'b', 'c', 'alpha', 'beta', 'gamma'].forEach((k) => {
@@ -5725,6 +6538,7 @@
           if (inp) {
             inp.addEventListener('change', (e) => {
               cc.cell[k] = parseFloat(e.target.value) || cc.cell[k];
+              cc.removedParts = [];
               enforceCrystalSystemConstraints(cc, true);
               updateAll();
             });
@@ -5732,12 +6546,14 @@
         });
         document.getElementById('mc-add-atom').addEventListener('click', () => {
           cc.basis.push({ el: 'O', fx: '1/2', fy: '0', fz: '0' });
+          cc.removedParts = [];
           updateAll();
         });
         sb.querySelectorAll('.mc-el-sel').forEach((sel) => {
           sel.addEventListener('change', (e) => {
             const idx = parseInt(sel.getAttribute('data-bidx'), 10);
             if (cc.basis[idx]) cc.basis[idx].el = e.target.value;
+            cc.removedParts = [];
             updateAll();
           });
         });
@@ -5746,6 +6562,7 @@
             const idx = parseInt(inp.getAttribute('data-bidx'), 10);
             const ax = inp.getAttribute('data-bax');
             if (cc.basis[idx]) cc.basis[idx][ax] = e.target.value.trim();
+            cc.removedParts = [];
             updateAll();
           });
         });
@@ -5754,6 +6571,7 @@
             const idx = parseInt(btn.getAttribute('data-bdel'), 10);
             if (cc.basis.length <= 1) { showToast('Keep at least one basis atom'); return; }
             cc.basis.splice(idx, 1);
+            cc.removedParts = [];
             updateAll();
           });
         });
@@ -5762,11 +6580,72 @@
         sb.querySelectorAll('.mc-sc-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
             cc.supercell = btn.getAttribute('data-mcsc');
+            cc.removedParts = [];
             autoFrameCamera();
             updateAll();
           });
         });
         document.getElementById('mc-show-bonds').addEventListener('change', (e) => { cc.showBonds = e.target.checked; updateAll(); });
+
+        document.getElementById('mc-chk-rejoin-anim').addEventListener('change', (e) => {
+          cc.animateRejoin = e.target.checked;
+        });
+        document.getElementById('mc-restore-all').addEventListener('click', () => {
+          if (!cc.removedParts || cc.removedParts.length === 0) return;
+          scheduleRejoin(cc.removedParts.map((p) => p.id), cc.animateRejoin);
+          cc.removedParts = [];
+          showToast(cc.animateRejoin ? 'Rejoining all parts to lattice positions...' : 'Restored all hidden parts');
+          updateAll();
+        });
+        sb.querySelectorAll('.mc-restore-part-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const pid = btn.getAttribute('data-mcrestore');
+            scheduleRejoin([pid], cc.animateRejoin);
+            cc.removedParts = (cc.removedParts || []).filter((p) => p.id !== pid);
+            updateAll();
+          });
+        });
+
+        const mcCifInp = document.getElementById('mc-import-cif-file');
+        document.getElementById('mc-import-cif').addEventListener('click', () => mcCifInp.click());
+        mcCifInp.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          e.target.value = '';
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = parseCIFText(String(reader.result || ''), file.name);
+              registerImportedCif(parsed);
+              loadStructureIntoMyCrystal(parsed);
+              autoFrameCamera();
+              showToast(parsed.fallbackCount > 0
+                ? 'Imported CIF "' + parsed.name + '" (' + parsed.basis.length + ' sites; ' + parsed.fallbackCount + ' unknown element(s) → C)'
+                : 'Imported CIF "' + parsed.name + '" (' + parsed.basis.length + ' sites, ' + parsed.system + ')');
+              updateAll();
+            } catch (err) {
+              showToast('CIF import failed: ' + (err && err.message ? err.message : 'Invalid file'));
+            }
+          };
+          reader.readAsText(file);
+        });
+
+        document.getElementById('mc-export-cif').addEventListener('click', () => {
+          const stObj = getCustomCrystalAsStructure();
+          const cifText = serializeCrystalToCIF(stObj);
+          const safeName = (String(cc.name || 'my_crystal').replace(/[^a-z0-9_-]/gi, '_') || 'my_crystal') + '.cif';
+          downloadTextFile(safeName, cifText, 'chemical/x-cif;charset=utf-8');
+          showToast('Exported ' + safeName);
+        });
+
+        document.getElementById('mc-send-reciprocal').addEventListener('click', () => {
+          state.recipCrystalId = 'my_crystal_active';
+          state.activeTab = 'reciprocal';
+          syncBraggDFromHKL();
+          autoFrameCamera();
+          showToast('Loaded "' + cc.name + '" into Reciprocal Space & XRD');
+          updateAll();
+        });
 
         document.getElementById('mc-save-btn').addEventListener('click', () => {
           const nm = (document.getElementById('mc-save-name').value || '').trim() || 'Custom Crystal';
@@ -5795,6 +6674,7 @@
             cc.centering = it.centering;
             cc.cell = Object.assign({}, it.cell);
             cc.basis = it.basis.map((b) => Object.assign({}, b));
+            cc.removedParts = [];
             autoFrameCamera();
             showToast('Loaded "' + it.name + '"');
             updateAll();
@@ -5858,6 +6738,7 @@
                 fy: String(b.fy !== undefined ? b.fy : (b.f ? b.f[1] : 0)),
                 fz: String(b.fz !== undefined ? b.fz : (b.f ? b.f[2] : 0))
               }));
+              cc.removedParts = [];
               enforceCrystalSystemConstraints(cc, true);
               autoFrameCamera();
               showToast(fallbackCount > 0
@@ -8362,7 +9243,7 @@
           pill.innerHTML = '<span class="font-semibold text-slate-100">' + state.voidLattice + ' Interstitial Voids</span><span class="text-slate-500">&bull;</span><span class="font-mono text-emerald-300">' + modeTxt + '</span>';
         } else if (state.activeTab === 'reciprocal') {
           const c = getRecipCrystal();
-          pill.innerHTML = '<span class="font-semibold text-slate-100">Reciprocal Space: ' + c.formula + '</span><span class="text-slate-500">&bull;</span><span class="font-mono text-amber-300">(' + state.recipH + ' ' + state.recipK + ' ' + state.recipL + ')</span>';
+          pill.innerHTML = '<span class="font-semibold text-slate-100">Reciprocal Space: ' + esc(c.formula || c.name) + '</span><span class="text-slate-500">&bull;</span><span class="font-mono text-amber-300">(' + state.recipH + ' ' + state.recipK + ' ' + state.recipL + ')</span>';
         } else if (state.activeTab === 'defects') {
           if (state.defectMode === 'point') {
             const scLbl = state.defectSupercell === '1' ? '1 Cell' : (state.defectSupercell + ' Cells');
@@ -8378,12 +9259,15 @@
           pill.innerHTML = '<span class="font-semibold text-slate-100">3D Reference Sphere [' + state.stereo.center + ']</span><span class="text-slate-500">&bull;</span><span class="font-mono text-amber-300">θ = ' + (az.valid ? az.thetaDeg.toFixed(1) + '°' : 'N/A') + '</span>';
         } else {
           const cc = state.customCrystal;
-          pill.innerHTML = '<span class="font-semibold text-slate-100">' + esc(cc.name) + '</span><span class="text-slate-500">&bull;</span><span class="font-mono text-emerald-300">' + esc(cc.system) + ' (' + esc(cc.centering) + ')</span>';
+          const remCnt = (cc.removedParts || []).length;
+          pill.innerHTML = '<span class="font-semibold text-slate-100">' + esc(cc.name) + '</span><span class="text-slate-500">&bull;</span><span class="font-mono text-emerald-300">' + esc(cc.system) + ' (' + esc(cc.centering) + ')</span>' +
+            (remCnt > 0 ? '<span class="text-slate-500">&bull;</span><span class="font-mono text-amber-300">' + remCnt + ' hidden</span>' : '');
         }
       }
 
-      function scheduleRejoin(ids) {
-        if (!state.animateRejoin) return;
+      function scheduleRejoin(ids, useAnim) {
+        const shouldAnim = useAnim !== undefined ? useAnim : state.animateRejoin;
+        if (!shouldAnim) return;
         const now = performance.now();
         ids.forEach((pid) => {
           const dir = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(4.2);
@@ -8914,6 +9798,9 @@
           state.activeTab = nextTab;
           if (nextTab === 'defects' && state.defectMode === 'point' && state.defectThermoSync && state.defectVacancies.length === 0) {
             syncThermodynamicVacancies();
+          }
+          if (nextTab === 'reciprocal' && state.recipCrystalId === 'my_crystal_active') {
+            syncBraggDFromHKL();
           }
           autoFrameCamera();
           updateAll();
